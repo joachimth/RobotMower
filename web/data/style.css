@@ -1,0 +1,386 @@
+/* Robot Mower CSS Styles */
+
+:root {
+    --primary-color: #4CAF50;
+    --danger-color: #f44336;
+    --warning-color: #ff9800;
+    --secondary-color: #2196F3;
+    --dark-bg: #1e1e1e;
+    --panel-bg: #2d2d2d;
+    --text-color: #e0e0e0;
+    --border-color: #404040;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--dark-bg);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: var(--panel-bg);
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+header h1 {
+    font-size: 2em;
+    color: var(--primary-color);
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #f44336;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.connected {
+    background-color: var(--primary-color);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Dashboard Grid */
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* Panels */
+.panel {
+    background-color: var(--panel-bg);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.panel h2 {
+    margin-bottom: 15px;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+/* Status Panel */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.status-item label {
+    font-size: 0.9em;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.status-item .value {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* Battery Display */
+.battery-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.battery-bar {
+    flex: 1;
+    height: 30px;
+    background-color: #1a1a1a;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 2px solid var(--border-color);
+}
+
+.battery-level {
+    height: 100%;
+    background: linear-gradient(90deg, var(--danger-color), var(--warning-color), var(--primary-color));
+    transition: width 0.5s ease;
+    width: 0%;
+}
+
+.battery-text {
+    font-weight: bold;
+    min-width: 50px;
+}
+
+/* Buttons */
+.button-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.btn {
+    padding: 15px 25px;
+    font-size: 1em;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.btn-warning {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.btn-small {
+    padding: 8px 15px;
+    font-size: 0.9em;
+}
+
+/* Sensor Panel */
+#sensorCanvas {
+    display: block;
+    margin: 0 auto 15px;
+    background-color: #1a1a1a;
+    border-radius: 5px;
+}
+
+.sensor-values {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    text-align: center;
+}
+
+.sensor-value {
+    padding: 10px;
+    background-color: #1a1a1a;
+    border-radius: 5px;
+}
+
+.sensor-value label {
+    display: block;
+    font-size: 0.9em;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.sensor-value span {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* Compass Panel */
+.compass-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#compassCanvas {
+    background-color: #1a1a1a;
+    border-radius: 50%;
+    margin-bottom: 15px;
+}
+
+.compass-value {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* Logs Panel */
+.logs-panel {
+    grid-column: 1 / -1;
+}
+
+.logs-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.logs-controls label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.logs-container {
+    height: 300px;
+    overflow-y: auto;
+    background-color: #1a1a1a;
+    border-radius: 5px;
+    padding: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.log-entry {
+    padding: 5px;
+    margin-bottom: 2px;
+    border-left: 3px solid transparent;
+}
+
+.log-entry.debug {
+    border-left-color: #888;
+    color: #888;
+}
+
+.log-entry.info {
+    border-left-color: var(--secondary-color);
+    color: var(--secondary-color);
+}
+
+.log-entry.warn {
+    border-left-color: var(--warning-color);
+    color: var(--warning-color);
+}
+
+.log-entry.error {
+    border-left-color: var(--danger-color);
+    color: var(--danger-color);
+}
+
+/* Settings Panel */
+.settings-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting-item label {
+    flex: 1;
+}
+
+.setting-item input[type="number"] {
+    width: 80px;
+    padding: 5px;
+    background-color: #1a1a1a;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    color: var(--text-color);
+}
+
+.setting-item input[type="range"] {
+    flex: 1;
+}
+
+/* Footer */
+footer {
+    margin-top: 30px;
+    padding: 20px;
+    text-align: center;
+    background-color: var(--panel-bg);
+    border-radius: 10px;
+    color: #888;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    .status-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .button-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
