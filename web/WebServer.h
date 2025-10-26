@@ -1,0 +1,108 @@
+#ifndef WEBSERVER_H
+#define WEBSERVER_H
+
+#include <Arduino.h>
+#include <WiFi.h>
+#include <ESPAsyncWebServer.h>
+#include <ESPmDNS.h>
+#include "../config/Config.h"
+#include "../config/Credentials.h"
+#include "../system/Logger.h"
+
+/**
+ * WebServer klasse - Håndterer HTTP web server
+ *
+ * Denne klasse opsætter og håndterer web serveren til
+ * robot kontrol interface.
+ */
+class WebServer {
+public:
+    /**
+     * Constructor
+     */
+    WebServer();
+
+    /**
+     * Initialiserer web server og WiFi
+     * @return true hvis succesfuld, false ved fejl
+     */
+    bool begin();
+
+    /**
+     * Opdaterer web server
+     * Kalder denne regelmæssigt i loop()
+     */
+    void update();
+
+    /**
+     * Opsætter alle HTTP routes
+     */
+    void setupRoutes();
+
+    /**
+     * Tjek om klient er forbundet
+     * @return true hvis forbundet
+     */
+    bool isClientConnected();
+
+    /**
+     * Hent server pointer (til brug i andre moduler)
+     * @return Pointer til AsyncWebServer
+     */
+    AsyncWebServer* getServer();
+
+    /**
+     * Hent WiFi status
+     * @return true hvis forbundet til WiFi
+     */
+    bool isWiFiConnected();
+
+    /**
+     * Hent IP adresse
+     * @return IP adresse som String
+     */
+    String getIPAddress();
+
+private:
+    /**
+     * Forbinder til WiFi netværk
+     * @return true hvis succesfuld
+     */
+    bool connectWiFi();
+
+    /**
+     * Opsætter Access Point (fallback)
+     */
+    void setupAccessPoint();
+
+    /**
+     * Opsætter mDNS
+     */
+    void setupMDNS();
+
+    /**
+     * Håndterer root request (/)
+     */
+    void handleRoot(AsyncWebServerRequest *request);
+
+    /**
+     * Håndterer 404 fejl
+     */
+    void handleNotFound(AsyncWebServerRequest *request);
+
+    // Server objekt
+    AsyncWebServer* server;
+
+    // WiFi state
+    bool wifiConnected;
+    bool apMode;
+    String ipAddress;
+
+    // Timing
+    unsigned long lastWiFiCheck;
+
+    // State
+    bool initialized;
+};
+
+#endif // WEBSERVER_H

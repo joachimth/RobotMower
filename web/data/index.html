@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Mower Control</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🤖 Robot Plæneklipper</h1>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="connectionText">Forbinder...</span>
+            </div>
+        </header>
+
+        <!-- Main Dashboard -->
+        <main class="dashboard">
+            <!-- Status Panel -->
+            <section class="panel status-panel">
+                <h2>Status</h2>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <label>Tilstand:</label>
+                        <span id="robotState" class="value">-</span>
+                    </div>
+                    <div class="status-item">
+                        <label>Batteri:</label>
+                        <span id="batteryVoltage" class="value">-</span>
+                    </div>
+                    <div class="status-item">
+                        <label>Retning:</label>
+                        <span id="heading" class="value">-</span>
+                    </div>
+                    <div class="status-item">
+                        <label>Uptime:</label>
+                        <span id="uptime" class="value">-</span>
+                    </div>
+                </div>
+
+                <!-- Battery Bar -->
+                <div class="battery-container">
+                    <div class="battery-bar">
+                        <div id="batteryLevel" class="battery-level"></div>
+                    </div>
+                    <span id="batteryPercent" class="battery-text">-</span>
+                </div>
+            </section>
+
+            <!-- Control Panel -->
+            <section class="panel control-panel">
+                <h2>Kontrol</h2>
+                <div class="button-grid">
+                    <button id="btnStart" class="btn btn-primary">Start</button>
+                    <button id="btnStop" class="btn btn-danger">Stop</button>
+                    <button id="btnPause" class="btn btn-warning">Pause</button>
+                    <button id="btnCalibrate" class="btn btn-secondary">Kalibrér</button>
+                </div>
+            </section>
+
+            <!-- Sensor Visualization -->
+            <section class="panel sensor-panel">
+                <h2>Sensorer</h2>
+                <canvas id="sensorCanvas" width="300" height="200"></canvas>
+                <div class="sensor-values">
+                    <div class="sensor-value">
+                        <label>Venstre:</label>
+                        <span id="sensorLeft">-</span> cm
+                    </div>
+                    <div class="sensor-value">
+                        <label>Midten:</label>
+                        <span id="sensorMiddle">-</span> cm
+                    </div>
+                    <div class="sensor-value">
+                        <label>Højre:</label>
+                        <span id="sensorRight">-</span> cm
+                    </div>
+                </div>
+            </section>
+
+            <!-- Compass -->
+            <section class="panel compass-panel">
+                <h2>Kompas</h2>
+                <canvas id="compassCanvas" width="200" height="200"></canvas>
+                <div class="compass-value">
+                    <span id="compassHeading">0</span>°
+                </div>
+            </section>
+
+            <!-- Logs -->
+            <section class="panel logs-panel">
+                <h2>Debug Logs</h2>
+                <div class="logs-controls">
+                    <button id="btnClearLogs" class="btn btn-small">Ryd Logs</button>
+                    <label>
+                        <input type="checkbox" id="chkAutoScroll" checked>
+                        Auto-scroll
+                    </label>
+                </div>
+                <div id="logs" class="logs-container"></div>
+            </section>
+
+            <!-- Settings -->
+            <section class="panel settings-panel">
+                <h2>Indstillinger</h2>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label for="obstacleThreshold">Forhindring Tærskel:</label>
+                        <input type="number" id="obstacleThreshold" min="10" max="100" value="30">
+                        <span>cm</span>
+                    </div>
+                    <div class="setting-item">
+                        <label for="rowWidth">Række Bredde:</label>
+                        <input type="number" id="rowWidth" min="20" max="50" value="30">
+                        <span>cm</span>
+                    </div>
+                    <div class="setting-item">
+                        <label for="motorSpeed">Motor Hastighed:</label>
+                        <input type="range" id="motorSpeed" min="100" max="255" value="200">
+                        <span id="motorSpeedValue">200</span>
+                    </div>
+                </div>
+                <button id="btnSaveSettings" class="btn btn-primary">Gem Indstillinger</button>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>Robot Mower v1.0 | ESP32-S3 | <span id="freeHeap">-</span> KB free</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
