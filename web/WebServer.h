@@ -3,6 +3,12 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+
+// Workaround for HTTP method constants if not defined in library
+#ifndef HTTP_GET
+  #include <AsyncTCP.h>
+#endif
+
 #include <ESPAsyncWebServer.h>
 #include <ESPmDNS.h>
 #include "../config/Config.h"
