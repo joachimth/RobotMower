@@ -16,14 +16,10 @@ bool Motors::begin() {
     pinMode(MOTOR_RIGHT_IN1, OUTPUT);
     pinMode(MOTOR_RIGHT_IN2, OUTPUT);
 
-    // Konfigurer PWM kanaler (ESP32 specifik)
-    // Venstre motor - PWM kanal 0
-    ledcSetup(0, MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION);
-    ledcAttachPin(MOTOR_LEFT_PWM, 0);
-
-    // Højre motor - PWM kanal 1
-    ledcSetup(1, MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION);
-    ledcAttachPin(MOTOR_RIGHT_PWM, 1);
+    // Konfigurer PWM kanaler (ESP32 Arduino Core 3.x API)
+    // ledcAttach returnerer automatisk allokeret kanal
+    ledcAttach(MOTOR_LEFT_PWM, MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION);
+    ledcAttach(MOTOR_RIGHT_PWM, MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION);
 
     // Initialiser motorer til stop
     stop();
@@ -105,8 +101,8 @@ void Motors::emergencyStop() {
     digitalWrite(MOTOR_RIGHT_IN1, LOW);
     digitalWrite(MOTOR_RIGHT_IN2, LOW);
 
-    ledcWrite(0, 0);
-    ledcWrite(1, 0);
+    ledcWrite(MOTOR_LEFT_PWM, 0);
+    ledcWrite(MOTOR_RIGHT_PWM, 0);
 
     currentLeftSpeed = 0;
     currentRightSpeed = 0;
@@ -134,17 +130,17 @@ void Motors::setLeftMotor(int speed) {
         // Fremad
         digitalWrite(MOTOR_LEFT_IN1, HIGH);
         digitalWrite(MOTOR_LEFT_IN2, LOW);
-        ledcWrite(0, speed);
+        ledcWrite(MOTOR_LEFT_PWM, speed);
     } else if (speed < 0) {
         // Baglæns
         digitalWrite(MOTOR_LEFT_IN1, LOW);
         digitalWrite(MOTOR_LEFT_IN2, HIGH);
-        ledcWrite(0, abs(speed));
+        ledcWrite(MOTOR_LEFT_PWM, abs(speed));
     } else {
         // Stop
         digitalWrite(MOTOR_LEFT_IN1, LOW);
         digitalWrite(MOTOR_LEFT_IN2, LOW);
-        ledcWrite(0, 0);
+        ledcWrite(MOTOR_LEFT_PWM, 0);
     }
 }
 
@@ -155,17 +151,17 @@ void Motors::setRightMotor(int speed) {
         // Fremad
         digitalWrite(MOTOR_RIGHT_IN1, HIGH);
         digitalWrite(MOTOR_RIGHT_IN2, LOW);
-        ledcWrite(1, speed);
+        ledcWrite(MOTOR_RIGHT_PWM, speed);
     } else if (speed < 0) {
         // Baglæns
         digitalWrite(MOTOR_RIGHT_IN1, LOW);
         digitalWrite(MOTOR_RIGHT_IN2, HIGH);
-        ledcWrite(1, abs(speed));
+        ledcWrite(MOTOR_RIGHT_PWM, abs(speed));
     } else {
         // Stop
         digitalWrite(MOTOR_RIGHT_IN1, LOW);
         digitalWrite(MOTOR_RIGHT_IN2, LOW);
-        ledcWrite(1, 0);
+        ledcWrite(MOTOR_RIGHT_PWM, 0);
     }
 }
 

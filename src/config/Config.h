@@ -57,6 +57,7 @@
 #define ULTRASONIC_MAX_DISTANCE     200    // Maksimal måleafstand (cm)
 #define OBSTACLE_THRESHOLD          30     // Forhindring tærskel (cm)
 #define OBSTACLE_CRITICAL           15     // Kritisk forhindring afstand (cm)
+#define OBSTACLE_CRITICAL_DISTANCE  15     // Alias for konsistens
 #define SENSOR_UPDATE_INTERVAL      100    // Sensor opdaterings interval (ms)
 #define SENSOR_TIMEOUT              30000  // Sensor timeout (microsekunder)
 
