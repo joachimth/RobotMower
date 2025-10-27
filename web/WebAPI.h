@@ -50,6 +50,25 @@ public:
      */
     void setupRoutes();
 
+    /**
+     * Opret status JSON (public for WebSocket brug)
+     * @return JSON string med robot status
+     */
+    String createStatusJSON();
+
+    /**
+     * Opret logs JSON
+     * @param count Antal log entries
+     * @return JSON string med logs
+     */
+    String createLogsJSON(int count);
+
+    /**
+     * Opret settings JSON
+     * @return JSON string med indstillinger
+     */
+    String createSettingsJSON();
+
 private:
     // HTTP request handlers
     void handleGetStatus(AsyncWebServerRequest *request);
@@ -60,11 +79,6 @@ private:
     void handleGetLogs(AsyncWebServerRequest *request);
     void handleGetSettings(AsyncWebServerRequest *request);
     void handleUpdateSettings(AsyncWebServerRequest *request);
-
-    // JSON helper functions
-    String createStatusJSON();
-    String createLogsJSON(int count);
-    String createSettingsJSON();
 
     // Hardware pointers
     WebServer* webServerPtr;

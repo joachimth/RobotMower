@@ -73,6 +73,7 @@ Installer følgende libraries via Arduino Library Manager:
 - Heltec ESP32 Dev-Boards by Heltec Automation
 - AsyncTCP by me-no-dev (Hristo Gochkov)
 - ESPAsyncWebServer by me-no-dev (Hristo Gochkov)
+  ⚠️ IKKE "ESP_Async_WebServer" (med underscores)!
 - ArduinoJson by Benoit Blanchon (version 6.x eller nyere)
 - MPU9250 by hideakitai (Hideaki Tai) ELLER
 - MPU6050 by Electronic Cats eller Adafruit MPU6050 by Adafruit
@@ -81,6 +82,11 @@ Installer følgende libraries via Arduino Library Manager:
 
 **VIGTIGT**: Sørg for at installere fra de korrekte udviklere, da der findes
 flere libraries med lignende navne!
+
+**Manuel Installation**: Hvis ESPAsyncWebServer ikke findes i Library Manager,
+download den direkte fra GitHub:
+- https://github.com/me-no-dev/ESPAsyncWebServer
+- https://github.com/me-no-dev/AsyncTCP
 
 ### 3. Konfiguration
 

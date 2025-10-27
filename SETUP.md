@@ -43,9 +43,17 @@ https://github.com/Heltec-Aaron-Lee/WiFi_Kit_series/releases/download/0.0.7/pack
 #### Core Libraries
 - **AsyncTCP** by **me-no-dev** (Hristo Gochkov)
   - ⚠️ IKKE "dvarrel" versionen!
+  - Library navn skal være præcis: "AsyncTCP"
+
 - **ESPAsyncWebServer** by **me-no-dev** (Hristo Gochkov)
   - ⚠️ IKKE "lacamera" versionen!
+  - ⚠️ IKKE "ESP_Async_WebServer" (med underscores)!
+  - Library navn skal være præcis: "ESPAsyncWebServer" (uden underscores)
+  - Hvis Library Manager ikke viser dette, installer manuelt fra:
+    https://github.com/me-no-dev/ESPAsyncWebServer
+
 - **ArduinoJson** by **Benoit Blanchon** (version 6.x eller nyere)
+  - Version 7.x virker også
 
 #### Sensor Libraries
 Vælg ÉN af følgende IMU libraries:
@@ -84,9 +92,30 @@ Forkerte libraries vil give compile errors.
 
 **Eksempel - ESPAsyncWebServer**:
 ```
-❌ ESPAsyncWebServer by lacamera <- FORKERT!
-✅ ESPAsyncWebServer by me-no-dev <- KORREKT!
+❌ ESPAsyncWebServer by lacamera      <- FORKERT!
+❌ ESP_Async_WebServer (med _)        <- FORKERT!
+✅ ESPAsyncWebServer by me-no-dev     <- KORREKT!
 ```
+
+### Trin 1.3.1: Manuel Installation af ESPAsyncWebServer (hvis nødvendigt)
+
+Hvis **ESPAsyncWebServer by me-no-dev** IKKE vises i Library Manager:
+
+**Metode 1: Download ZIP**
+1. Gå til https://github.com/me-no-dev/ESPAsyncWebServer
+2. Klik "Code" → "Download ZIP"
+3. I Arduino IDE: **Sketch → Include Library → Add .ZIP Library**
+4. Vælg den downloadede ZIP fil
+5. Genstart Arduino IDE
+
+**Metode 2: Git Clone (avanceret)**
+```bash
+cd ~/Documents/Arduino/libraries/
+git clone https://github.com/me-no-dev/ESPAsyncWebServer.git
+```
+
+Gentag samme proces for **AsyncTCP**:
+- https://github.com/me-no-dev/AsyncTCP
 
 ### Trin 1.4: Verificér Installation
 
@@ -478,6 +507,34 @@ Når drive motorer fungerer korrekt:
 ---
 
 ## ✅ Troubleshooting
+
+### Problem: Compile error - 'HTTP_GET' was not declared
+
+**Fejlbesked:**
+```
+error: 'HTTP_GET' was not declared in this scope
+error: 'HTTP_ANY' was not declared in this scope
+```
+
+**Årsag:**
+Du har installeret forkert ESPAsyncWebServer library!
+
+**Løsning:**
+1. I Arduino IDE: **Sketch → Include Library → Manage Libraries**
+2. Søg "ESPAsyncWebServer"
+3. **AFINSTALLER** alle versioner du har
+4. Installer **ESPAsyncWebServer by me-no-dev** (IKKE andre versioner!)
+5. Hvis den ikke findes i Library Manager, installer manuelt:
+   - Download fra: https://github.com/me-no-dev/ESPAsyncWebServer
+   - **Sketch → Include Library → Add .ZIP Library**
+6. Genstart Arduino IDE
+7. Prøv at compile igen
+
+### Problem: Compile error - 'createStatusJSON()' is private
+
+**Løsning:**
+Denne fejl er rettet i den seneste version af koden.
+Pull den seneste version fra git eller opdater `web/WebAPI.h`.
 
 ### Problem: WiFi forbinder ikke
 
