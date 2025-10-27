@@ -41,19 +41,52 @@ https://github.com/Heltec-Aaron-Lee/WiFi_Kit_series/releases/download/0.0.7/pack
 Åbn **Tools → Manage Libraries** og installer følgende:
 
 #### Core Libraries
-- **AsyncTCP** by dvarrel
-- **ESPAsyncWebServer** by lacamera
-- **ArduinoJson** by Benoit Blanchon (v6.x)
+- **AsyncTCP** by **me-no-dev** (Hristo Gochkov)
+  - ⚠️ IKKE "dvarrel" versionen!
+- **ESPAsyncWebServer** by **me-no-dev** (Hristo Gochkov)
+  - ⚠️ IKKE "lacamera" versionen!
+- **ArduinoJson** by **Benoit Blanchon** (version 6.x eller nyere)
 
 #### Sensor Libraries
-- **MPU9250** by hideakitai (ELLER MPU6050 by Electronic Cats)
-- **Adafruit MPU6050** (alternativ)
+Vælg ÉN af følgende IMU libraries:
+- **MPU9250** by **hideakitai** (Hideaki Tai) - Anbefalet til 9-axis
+  ELLER
+- **MPU6050** by **Electronic Cats** - God til 6-axis
+  ELLER
+- **Adafruit MPU6050** by **Adafruit** - Alternativ til 6-axis
 
 #### Display Library
-- **U8g2** by oliver (til OLED display)
+- **U8g2** by **olikraus** (Oliver Kraus)
+  - Komplet navn: "U8g2 by oliver"
 
 #### Heltec Library
-- Allerede inkluderet i Heltec ESP32 board package
+- Allerede inkluderet i Heltec ESP32 board package fra trin 1.2
+
+### ⚠️ VIGTIGT - Verificér Udviklere
+
+I Arduino Library Manager, tjek ALTID "by [udvikler navn]" feltet før installation!
+Forkerte libraries vil give compile errors.
+
+#### Sådan Finder Du Det Rigtige Library
+
+1. Åbn **Tools → Manage Libraries**
+2. Søg efter library navnet (f.eks. "AsyncTCP")
+3. Der vil ofte være FLERE resultater
+4. Kig på "by [navn]" under hver library
+5. Vælg det med den KORREKTE udvikler (se listen ovenfor)
+6. Klik **Install**
+
+**Eksempel - AsyncTCP**:
+```
+❌ AsyncTCP by dvarrel          <- FORKERT!
+✅ AsyncTCP by me-no-dev         <- KORREKT!
+```
+
+**Eksempel - ESPAsyncWebServer**:
+```
+❌ ESPAsyncWebServer by lacamera <- FORKERT!
+✅ ESPAsyncWebServer by me-no-dev <- KORREKT!
+```
 
 ### Trin 1.4: Verificér Installation
 

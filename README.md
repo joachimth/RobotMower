@@ -70,13 +70,17 @@ Se [PINOUT.md](PINOUT.md) for komplet pin diagram og forbindelser.
 Installer følgende libraries via Arduino Library Manager:
 
 ```
-- Heltec ESP32 Dev-Boards
-- AsyncTCP
-- ESPAsyncWebServer
-- ArduinoJson
-- MPU9250 (eller MPU6050)
-- U8g2 (til OLED display)
+- Heltec ESP32 Dev-Boards by Heltec Automation
+- AsyncTCP by me-no-dev (Hristo Gochkov)
+- ESPAsyncWebServer by me-no-dev (Hristo Gochkov)
+- ArduinoJson by Benoit Blanchon (version 6.x eller nyere)
+- MPU9250 by hideakitai (Hideaki Tai) ELLER
+- MPU6050 by Electronic Cats eller Adafruit MPU6050 by Adafruit
+- U8g2 by olikraus (Oliver Kraus)
 ```
+
+**VIGTIGT**: Sørg for at installere fra de korrekte udviklere, da der findes
+flere libraries med lignende navne!
 
 ### 3. Konfiguration
 
@@ -273,10 +277,14 @@ Dette projekt er open source og frit tilgængeligt til ikke-kommerciel brug.
 
 ## 👥 Credits
 
-- ESP32 Arduino Core: Espressif
-- ESPAsyncWebServer: me-no-dev
-- U8g2: olikraus
-- MPU9250 Library: hideakitai
+- **ESP32 Arduino Core**: Espressif Systems
+- **Heltec ESP32 Dev-Boards**: Heltec Automation
+- **AsyncTCP**: me-no-dev (Hristo Gochkov)
+- **ESPAsyncWebServer**: me-no-dev (Hristo Gochkov)
+- **ArduinoJson**: Benoit Blanchon
+- **U8g2**: olikraus (Oliver Kraus)
+- **MPU9250 Library**: hideakitai (Hideaki Tai)
+- **MPU6050 Library**: Electronic Cats / Adafruit
 
 ## 📞 Support
 
