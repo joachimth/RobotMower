@@ -94,7 +94,7 @@ Download ZIP fra GitHub → Arduino IDE → Sketch → Include Library → Add .
 
 ### 3. Konfiguration
 
-1. Kopiér `config/Credentials.h.example` til `config/Credentials.h`
+1. Kopiér `src/config/Credentials.h.example` til `src/config/Credentials.h`
 2. Indtast dit WiFi SSID og password:
 
 ```cpp
@@ -102,7 +102,7 @@ Download ZIP fra GitHub → Arduino IDE → Sketch → Include Library → Add .
 #define WIFI_PASSWORD       "DitWiFiPassword"
 ```
 
-3. Juster konstanter i `config/Config.h` efter behov
+3. Juster konstanter i `src/config/Config.h` efter behov
 
 ### 4. Upload
 
@@ -142,35 +142,38 @@ Real-time data på `ws://robot-mower.local/ws`
 ```
 RobotMower/
 ├── RobotMower.ino              # Hovedfil (setup + loop)
-├── config/
-│   ├── Config.h                # System konstanter
-│   └── Credentials.h.example   # WiFi credentials template
-├── hardware/
-│   ├── Motors.*                # Motor kontrol
-│   ├── Sensors.*               # Ultralyd sensorer
-│   ├── IMU.*                   # Gyroscope/accelerometer
-│   ├── Display.*               # OLED display
-│   ├── CuttingMechanism.*      # Klippermotor kontrol
-│   └── Battery.*               # Batteri monitoring
-├── navigation/
-│   ├── PathPlanner.*           # Rute planlægning
-│   ├── ObstacleAvoidance.*     # Forhindring detection
-│   └── Movement.*              # Bevægelses kontrol
-├── system/
-│   ├── StateManager.*          # State machine
-│   └── Logger.*                # Logging system
-├── web/
-│   ├── WebServer.*             # HTTP server
-│   ├── WebAPI.*                # REST API
-│   ├── WebSocket.*             # WebSocket handler
-│   └── data/
-│       ├── index.html          # Web interface
-│       ├── style.css           # Styling
-│       └── app.js              # Frontend JavaScript
-└── utils/
-    ├── Timer.*                 # Non-blocking timers
-    └── Math.*                  # Math utilities
+└── src/                        # Kildekode (Arduino IDE kompatibel struktur)
+    ├── config/
+    │   ├── Config.h            # System konstanter
+    │   └── Credentials.h.example # WiFi credentials template
+    ├── hardware/
+    │   ├── Motors.*            # Motor kontrol
+    │   ├── Sensors.*           # Ultralyd sensorer
+    │   ├── IMU.*               # Gyroscope/accelerometer
+    │   ├── Display.*           # OLED display
+    │   ├── CuttingMechanism.*  # Klippermotor kontrol
+    │   └── Battery.*           # Batteri monitoring
+    ├── navigation/
+    │   ├── PathPlanner.*       # Rute planlægning
+    │   ├── ObstacleAvoidance.* # Forhindring detection
+    │   └── Movement.*          # Bevægelses kontrol
+    ├── system/
+    │   ├── StateManager.*      # State machine
+    │   └── Logger.*            # Logging system
+    ├── web/
+    │   ├── WebServer.*         # HTTP server
+    │   ├── WebAPI.*            # REST API
+    │   ├── WebSocket.*         # WebSocket handler
+    │   └── data/
+    │       ├── index.html      # Web interface
+    │       ├── style.css       # Styling
+    │       └── app.js          # Frontend JavaScript
+    └── utils/
+        ├── Timer.*             # Non-blocking timers
+        └── Math.*              # Math utilities
 ```
+
+**Bemærk**: Alle moduler er placeret i `src/` mappen for Arduino IDE kompatibilitet.
 
 ## 🎯 Brug
 
@@ -200,6 +203,15 @@ RobotMower/
 - Emergency stop via OLED knap (hvis implementeret)
 
 ## 🔧 Troubleshooting
+
+### Arduino IDE Linker Errors
+
+Hvis du får "undefined reference" fejl under kompilering:
+
+- **Årsag**: Arduino IDE kræver at alle .cpp/.h filer i subdirectories er placeret i en `src/` mappe
+- **Løsning**: Projektet er allerede struktureret korrekt med `src/` mappen
+- **Verificér**: Alle moduler skal være i `src/` mappen (config, hardware, navigation, system, web, utils)
+- **Alternativ**: Overvej at bruge PlatformIO i stedet for Arduino IDE for bedre projekt struktur support
 
 ### WiFi Forbinder Ikke
 

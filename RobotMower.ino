@@ -30,34 +30,34 @@
 // ============================================================================
 
 // Config
-#include "config/Config.h"
-#include "config/Credentials.h"
+#include "src/config/Config.h"
+#include "src/config/Credentials.h"
 
 // System
-#include "system/Logger.h"
-#include "system/StateManager.h"
+#include "src/system/Logger.h"
+#include "src/system/StateManager.h"
 
 // Hardware
-#include "hardware/Motors.h"
-#include "hardware/Sensors.h"
-#include "hardware/IMU.h"
-#include "hardware/Display.h"
-#include "hardware/CuttingMechanism.h"
-#include "hardware/Battery.h"
+#include "src/hardware/Motors.h"
+#include "src/hardware/Sensors.h"
+#include "src/hardware/IMU.h"
+#include "src/hardware/Display.h"
+#include "src/hardware/CuttingMechanism.h"
+#include "src/hardware/Battery.h"
 
 // Navigation
-#include "navigation/PathPlanner.h"
-#include "navigation/ObstacleAvoidance.h"
-#include "navigation/Movement.h"
+#include "src/navigation/PathPlanner.h"
+#include "src/navigation/ObstacleAvoidance.h"
+#include "src/navigation/Movement.h"
 
 // Web
-#include "web/WebServer.h"
-#include "web/WebAPI.h"
-#include "web/WebSocket.h"
+#include "src/web/WebServer.h"
+#include "src/web/WebAPI.h"
+#include "src/web/WebSocket.h"
 
 // Utils
-#include "utils/Timer.h"
-#include "utils/Math.h"
+#include "src/utils/Timer.h"
+#include "src/utils/Math.h"
 
 // ============================================================================
 // GLOBAL OBJECTS
