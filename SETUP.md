@@ -41,18 +41,26 @@ https://github.com/Heltec-Aaron-Lee/WiFi_Kit_series/releases/download/0.0.7/pack
 Åbn **Tools → Manage Libraries** og installer følgende:
 
 #### Core Libraries
-- **AsyncTCP** by **me-no-dev** (Hristo Gochkov)
-  - ⚠️ IKKE "dvarrel" versionen!
-  - Library navn skal være præcis: "AsyncTCP"
 
-- **ESPAsyncWebServer** by **me-no-dev** (Hristo Gochkov)
+⚠️ **VIGTIGT**: Til ESP32-S3 skal du bruge ESP32Async versionerne (aktivt vedligeholdt)!
+
+- **AsyncTCP** by **ESP32Async** (mathieucarbou)
+  - GitHub: https://github.com/ESP32Async/AsyncTCP
+  - Dette er den opdaterede fork til ESP32-S3
+  - ⚠️ IKKE "me-no-dev" versionen (ikke længere vedligeholdt)
+  - ⚠️ IKKE "dvarrel" versionen!
+  - **SKAL installeres manuelt** (ikke i Library Manager)
+
+- **ESPAsyncWebServer** by **ESP32Async** (mathieucarbou)
+  - GitHub: https://github.com/ESP32Async/ESPAsyncWebServer
+  - Dette er den opdaterede fork til ESP32-S3
+  - ⚠️ IKKE "me-no-dev" versionen (ikke længere vedligeholdt)
   - ⚠️ IKKE "lacamera" versionen!
   - ⚠️ IKKE "ESP_Async_WebServer" (med underscores)!
-  - Library navn skal være præcis: "ESPAsyncWebServer" (uden underscores)
-  - Hvis Library Manager ikke viser dette, installer manuelt fra:
-    https://github.com/me-no-dev/ESPAsyncWebServer
+  - **SKAL installeres manuelt** (ikke i Library Manager)
 
 - **ArduinoJson** by **Benoit Blanchon** (version 6.x eller nyere)
+  - Denne findes i Library Manager
   - Version 7.x virker også
 
 #### Sensor Libraries
@@ -86,36 +94,58 @@ Forkerte libraries vil give compile errors.
 
 **Eksempel - AsyncTCP**:
 ```
-❌ AsyncTCP by dvarrel          <- FORKERT!
-✅ AsyncTCP by me-no-dev         <- KORREKT!
+❌ AsyncTCP by dvarrel           <- FORKERT!
+❌ AsyncTCP by me-no-dev         <- FORÆLDET (ikke til ESP32-S3)!
+✅ AsyncTCP by ESP32Async        <- KORREKT! (Manuel installation)
 ```
 
 **Eksempel - ESPAsyncWebServer**:
 ```
-❌ ESPAsyncWebServer by lacamera      <- FORKERT!
-❌ ESP_Async_WebServer (med _)        <- FORKERT!
-✅ ESPAsyncWebServer by me-no-dev     <- KORREKT!
+❌ ESPAsyncWebServer by lacamera       <- FORKERT!
+❌ ESP_Async_WebServer (med _)         <- FORKERT!
+❌ ESPAsyncWebServer by me-no-dev      <- FORÆLDET (ikke til ESP32-S3)!
+✅ ESPAsyncWebServer by ESP32Async     <- KORREKT! (Manuel installation)
 ```
 
-### Trin 1.3.1: Manuel Installation af ESPAsyncWebServer (hvis nødvendigt)
+### Trin 1.3.1: Manuel Installation af AsyncTCP og ESPAsyncWebServer
 
-Hvis **ESPAsyncWebServer by me-no-dev** IKKE vises i Library Manager:
+**DISSE LIBRARIES SKAL INSTALLERES MANUELT** da de ikke findes i Arduino Library Manager.
 
-**Metode 1: Download ZIP**
-1. Gå til https://github.com/me-no-dev/ESPAsyncWebServer
+#### Metode 1: Download ZIP (Nemmest)
+
+**1. Installer AsyncTCP:**
+1. Gå til https://github.com/ESP32Async/AsyncTCP
 2. Klik "Code" → "Download ZIP"
 3. I Arduino IDE: **Sketch → Include Library → Add .ZIP Library**
 4. Vælg den downloadede ZIP fil
-5. Genstart Arduino IDE
+5. Vent til "Library added to your libraries" vises
 
-**Metode 2: Git Clone (avanceret)**
+**2. Installer ESPAsyncWebServer:**
+1. Gå til https://github.com/ESP32Async/ESPAsyncWebServer
+2. Klik "Code" → "Download ZIP"
+3. I Arduino IDE: **Sketch → Include Library → Add .ZIP Library**
+4. Vælg den downloadede ZIP fil
+5. Vent til "Library added to your libraries" vises
+
+**3. Genstart Arduino IDE** - VIGTIGT!
+
+#### Metode 2: Git Clone (Avanceret)
+
+**Windows:**
 ```bash
-cd ~/Documents/Arduino/libraries/
-git clone https://github.com/me-no-dev/ESPAsyncWebServer.git
+cd C:\Users\[dit navn]\Documents\Arduino\libraries\
+git clone https://github.com/ESP32Async/AsyncTCP.git
+git clone https://github.com/ESP32Async/ESPAsyncWebServer.git
 ```
 
-Gentag samme proces for **AsyncTCP**:
-- https://github.com/me-no-dev/AsyncTCP
+**Mac/Linux:**
+```bash
+cd ~/Documents/Arduino/libraries/
+git clone https://github.com/ESP32Async/AsyncTCP.git
+git clone https://github.com/ESP32Async/ESPAsyncWebServer.git
+```
+
+**Genstart Arduino IDE** efter installation!
 
 ### Trin 1.4: Verificér Installation
 
@@ -517,18 +547,23 @@ error: 'HTTP_ANY' was not declared in this scope
 ```
 
 **Årsag:**
-Du har installeret forkert ESPAsyncWebServer library!
+Du har installeret forkert eller forældet ESPAsyncWebServer library!
 
 **Løsning:**
-1. I Arduino IDE: **Sketch → Include Library → Manage Libraries**
-2. Søg "ESPAsyncWebServer"
-3. **AFINSTALLER** alle versioner du har
-4. Installer **ESPAsyncWebServer by me-no-dev** (IKKE andre versioner!)
-5. Hvis den ikke findes i Library Manager, installer manuelt:
-   - Download fra: https://github.com/me-no-dev/ESPAsyncWebServer
-   - **Sketch → Include Library → Add .ZIP Library**
-6. Genstart Arduino IDE
-7. Prøv at compile igen
+1. **Fjern alle gamle versioner:**
+   - Gå til `C:\Users\[dit navn]\Documents\Arduino\libraries\`
+   - Slet mapper: `ESPAsyncWebServer`, `ESP_Async_WebServer`, `AsyncTCP`
+
+2. **Installer ESP32Async versioner (manuelt):**
+   - Download AsyncTCP: https://github.com/ESP32Async/AsyncTCP
+   - Download ESPAsyncWebServer: https://github.com/ESP32Async/ESPAsyncWebServer
+   - Klik "Code" → "Download ZIP" for begge
+   - I Arduino IDE: **Sketch → Include Library → Add .ZIP Library**
+   - Tilføj begge ZIP filer
+
+3. **Genstart Arduino IDE**
+
+4. **Prøv at compile igen** ✅
 
 ### Problem: Compile error - 'createStatusJSON()' is private
 

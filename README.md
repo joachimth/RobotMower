@@ -71,22 +71,26 @@ Installer følgende libraries via Arduino Library Manager:
 
 ```
 - Heltec ESP32 Dev-Boards by Heltec Automation
-- AsyncTCP by me-no-dev (Hristo Gochkov)
-- ESPAsyncWebServer by me-no-dev (Hristo Gochkov)
-  ⚠️ IKKE "ESP_Async_WebServer" (med underscores)!
+- AsyncTCP by ESP32Async (mathieucarbou) - Manuel installation påkrævet
+- ESPAsyncWebServer by ESP32Async (mathieucarbou) - Manuel installation påkrævet
 - ArduinoJson by Benoit Blanchon (version 6.x eller nyere)
 - MPU9250 by hideakitai (Hideaki Tai) ELLER
 - MPU6050 by Electronic Cats eller Adafruit MPU6050 by Adafruit
 - U8g2 by olikraus (Oliver Kraus)
 ```
 
-**VIGTIGT**: Sørg for at installere fra de korrekte udviklere, da der findes
-flere libraries med lignende navne!
+**VIGTIGT - ESP32-S3 Kompatibilitet**:
+- AsyncTCP og ESPAsyncWebServer skal installeres **manuelt** fra GitHub
+- Brug **ESP32Async** versionerne (ikke me-no-dev versioner)
+- ESP32Async versionerne er opdateret til ESP32-S3 og aktivt vedligeholdt
 
-**Manuel Installation**: Hvis ESPAsyncWebServer ikke findes i Library Manager,
-download den direkte fra GitHub:
-- https://github.com/me-no-dev/ESPAsyncWebServer
-- https://github.com/me-no-dev/AsyncTCP
+**Manuel Installation (Påkrævet)**:
+```
+AsyncTCP:          https://github.com/ESP32Async/AsyncTCP
+ESPAsyncWebServer: https://github.com/ESP32Async/ESPAsyncWebServer
+```
+
+Download ZIP fra GitHub → Arduino IDE → Sketch → Include Library → Add .ZIP Library
 
 ### 3. Konfiguration
 
@@ -285,12 +289,15 @@ Dette projekt er open source og frit tilgængeligt til ikke-kommerciel brug.
 
 - **ESP32 Arduino Core**: Espressif Systems
 - **Heltec ESP32 Dev-Boards**: Heltec Automation
-- **AsyncTCP**: me-no-dev (Hristo Gochkov)
-- **ESPAsyncWebServer**: me-no-dev (Hristo Gochkov)
+- **AsyncTCP**: ESP32Async (mathieucarbou) - Fork af me-no-dev's original
+- **ESPAsyncWebServer**: ESP32Async (mathieucarbou) - Fork af me-no-dev's original
 - **ArduinoJson**: Benoit Blanchon
 - **U8g2**: olikraus (Oliver Kraus)
 - **MPU9250 Library**: hideakitai (Hideaki Tai)
 - **MPU6050 Library**: Electronic Cats / Adafruit
+
+**Tak til originale udviklere**:
+- me-no-dev (Hristo Gochkov) for oprindelige AsyncTCP og ESPAsyncWebServer
 
 ## 📞 Support
 
