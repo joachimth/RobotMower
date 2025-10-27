@@ -3,10 +3,19 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <AsyncTCP.h>
 
-// Workaround for HTTP method constants if not defined in library
+// Define HTTP method constants if not already defined
+// These are used by ESPAsyncWebServer but sometimes not properly included
 #ifndef HTTP_GET
-  #include <AsyncTCP.h>
+  #define HTTP_GET     0b00000001
+  #define HTTP_POST    0b00000010
+  #define HTTP_DELETE  0b00000100
+  #define HTTP_PUT     0b00001000
+  #define HTTP_PATCH   0b00010000
+  #define HTTP_HEAD    0b00100000
+  #define HTTP_OPTIONS 0b01000000
+  #define HTTP_ANY     0b01111111
 #endif
 
 #include <ESPAsyncWebServer.h>
