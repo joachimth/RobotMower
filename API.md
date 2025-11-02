@@ -40,7 +40,17 @@ Returnerer nuværende robot status.
   "motors": {
     "left": 200,
     "right": 200,
-    "isMoving": true
+    "isMoving": true,
+    "current": {
+      "left": 12.5,
+      "right": 13.2,
+      "total": 25.7,
+      "warning": false
+    }
+  },
+  "cutting": {
+    "running": true,
+    "safetyLocked": false
   },
   "uptime": 3600000,
   "freeHeap": 234567
@@ -187,6 +197,170 @@ Opdaterer indstillinger.
 
 ---
 
+### POST /api/manual/forward
+
+Kører motorer fremad med specificeret hastighed.
+
+**Parameters:**
+- `speed` (optional) - PWM hastighed 100-255 (default: 200)
+
+**Example:**
+```
+POST /api/manual/forward
+FormData: speed=200
+```
+
+**Response:**
+```json
+{
+  "status": "forward",
+  "speed": 200
+}
+```
+
+---
+
+### POST /api/manual/backward
+
+Kører motorer baglæns med specificeret hastighed.
+
+**Parameters:**
+- `speed` (optional) - PWM hastighed 100-255 (default: 200)
+
+**Response:**
+```json
+{
+  "status": "backward",
+  "speed": 200
+}
+```
+
+---
+
+### POST /api/manual/left
+
+Drejer venstre med specificeret hastighed.
+
+**Parameters:**
+- `speed` (optional) - PWM hastighed 100-255 (default: turn speed)
+
+**Response:**
+```json
+{
+  "status": "left",
+  "speed": 150
+}
+```
+
+---
+
+### POST /api/manual/right
+
+Drejer højre med specificeret hastighed.
+
+**Parameters:**
+- `speed` (optional) - PWM hastighed 100-255 (default: turn speed)
+
+**Response:**
+```json
+{
+  "status": "right",
+  "speed": 150
+}
+```
+
+---
+
+### POST /api/manual/stop
+
+Stopper begge motorer øjeblikkeligt.
+
+**Response:**
+```json
+{
+  "status": "stopped"
+}
+```
+
+---
+
+### POST /api/manual/speed
+
+Sætter individuel hastighed for venstre og højre motor.
+
+**Parameters:**
+- `left` (required) - Venstre motor hastighed -255 til 255
+- `right` (required) - Højre motor hastighed -255 til 255
+
+**Example:**
+```
+POST /api/manual/speed
+FormData: left=200&right=180
+```
+
+**Response:**
+```json
+{
+  "status": "speed_set",
+  "left": 200,
+  "right": 180
+}
+```
+
+---
+
+### POST /api/cutting/start
+
+Starter klippermotor.
+
+**Response:**
+```json
+{
+  "status": "cutting_started"
+}
+```
+
+---
+
+### POST /api/cutting/stop
+
+Stopper klippermotor.
+
+**Response:**
+```json
+{
+  "status": "cutting_stopped"
+}
+```
+
+---
+
+### GET /api/current
+
+Henter real-time strømdata fra BTS7960 motor drivers.
+
+**Response:**
+```json
+{
+  "leftCurrent": 12.5,
+  "rightCurrent": 13.2,
+  "totalCurrent": 25.7,
+  "warning": false,
+  "maxCurrent": 43.0,
+  "warningThreshold": 35.0
+}
+```
+
+**Fields:**
+- `leftCurrent` - Venstre motor strøm i Ampere
+- `rightCurrent` - Højre motor strøm i Ampere
+- `totalCurrent` - Total strøm for begge motorer
+- `warning` - true hvis strømmen overstiger warning threshold
+- `maxCurrent` - Maximum driver kapacitet (43A for BTS7960)
+- `warningThreshold` - Advarsel tærskel (35A)
+
+---
+
 ## WebSocket API
 
 ### Connection
@@ -256,6 +430,13 @@ Send kommandoer til robot:
 - `stop` - Stop mowing
 - `pause` - Pause mowing
 - `calibrate` - Start calibration
+- `forward` - Manual forward
+- `backward` - Manual backward
+- `left` - Manual left
+- `right` - Manual right
+- `manualStop` - Stop manual movement
+- `cuttingStart` - Start cutting motor
+- `cuttingStop` - Stop cutting motor
 
 ---
 
@@ -309,12 +490,13 @@ For at tilføje basic auth, se ESPAsyncWebServer dokumentation.
 ## JavaScript Example
 
 ```javascript
-// Fetch status
+// Fetch status (with current monitoring)
 async function getStatus() {
   const response = await fetch('/api/status');
   const data = await response.json();
   console.log('Robot state:', data.state);
   console.log('Battery:', data.battery.percentage + '%');
+  console.log('Motor current:', data.motors.current.total + 'A');
 }
 
 // Start mowing
@@ -324,6 +506,31 @@ async function startMowing() {
   });
   const data = await response.json();
   console.log('Started:', data.status);
+}
+
+// Manual control - forward
+async function manualForward(speed = 200) {
+  const formData = new FormData();
+  formData.append('speed', speed);
+
+  const response = await fetch('/api/manual/forward', {
+    method: 'POST',
+    body: formData
+  });
+  const data = await response.json();
+  console.log('Moving forward:', data.speed);
+}
+
+// Get current monitoring data
+async function getCurrentData() {
+  const response = await fetch('/api/current');
+  const data = await response.json();
+  console.log('Left motor:', data.leftCurrent + 'A');
+  console.log('Right motor:', data.rightCurrent + 'A');
+  console.log('Total:', data.totalCurrent + 'A');
+  if (data.warning) {
+    console.warn('High current warning!');
+  }
 }
 
 // WebSocket connection
@@ -383,7 +590,7 @@ for log in logs:
 ## curl Examples
 
 ```bash
-# Get status
+# Get status (with current data)
 curl http://robot-mower.local/api/status
 
 # Start mowing
@@ -391,6 +598,29 @@ curl -X POST http://robot-mower.local/api/start
 
 # Stop mowing
 curl -X POST http://robot-mower.local/api/stop
+
+# Manual control - forward with speed
+curl -X POST http://robot-mower.local/api/manual/forward \
+  -d "speed=200"
+
+# Manual control - turn left
+curl -X POST http://robot-mower.local/api/manual/left
+
+# Manual control - stop
+curl -X POST http://robot-mower.local/api/manual/stop
+
+# Set individual motor speeds
+curl -X POST http://robot-mower.local/api/manual/speed \
+  -d "left=200&right=180"
+
+# Start cutting motor
+curl -X POST http://robot-mower.local/api/cutting/start
+
+# Stop cutting motor
+curl -X POST http://robot-mower.local/api/cutting/stop
+
+# Get current monitoring data
+curl http://robot-mower.local/api/current
 
 # Get logs
 curl "http://robot-mower.local/api/logs?count=20"
@@ -408,7 +638,12 @@ curl -X POST http://robot-mower.local/api/settings \
 - Alle timestamps er i millisekunder siden boot (millis())
 - Alle distance værdier er i centimeter
 - Alle vinkler er i grader (0-360)
-- Alle hastigheder er PWM værdier (0-255)
+- Alle hastigheder er PWM værdier (0-255) for motorer
+- Strøm værdier er i Ampere (A)
+- BTS7960 current sense: 10mV/A output
+- Max motor current: 43A per driver
+- Current warning threshold: 35A
 - WebSocket broadcast interval: 200ms
 - Status update interval: 1000ms
+- Current monitoring update: 100ms
 

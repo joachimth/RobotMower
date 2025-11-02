@@ -15,12 +15,14 @@ Komplet hardware liste for Robot Plæneklipper projektet.
   - Pris: ~$15-20
 
 ### 2. Motor Driver
-- **L298N Dual H-Bridge Motor Driver**
-  - 2 kanaler
-  - Max 2A per kanal
-  - PWM hastigheds kontrol
-  - Indbygget 5V regulator
-  - Pris: ~$3-5
+- **2x Double BTS7960 43A H-Bridge Motor Driver**
+  - 1 driver per motor
+  - Max 43A kontinuerligt per driver
+  - Separate PWM for fremad/baglæns
+  - Built-in current sensing (10mV/A)
+  - Overload og kortslutnings beskyttelse
+  - Isoleret logik interface
+  - Pris: ~$10-15 per stk
 
 ### 3. Drive Motors
 - **2x DC Gear Motors**
@@ -64,12 +66,24 @@ ELLER
   - Pris: Varierer
 
 ### 8. Batteri
-- **3S LiPo Battery**
-  - 11.1V nominal (12.6V full)
+
+**Motor Batteri:**
+- **5S LiPo Battery** (til motorer)
+  - 18.5V nominal (21V full)
   - Minimum 3000mAh
   - Anbefalet: 5000-8000mAh
+  - XT60 connector
+  - High discharge rate (25C+)
+  - Pris: ~$40-80
+
+**Kontrol Batteri:**
+- **3S LiPo Battery** (til elektronik)
+  - 11.1V nominal (12.6V full)
+  - 2000-3000mAh tilstrækkeligt
   - XT60 eller T-plug connector
-  - Pris: ~$30-60
+  - Pris: ~$20-40
+
+**Alternativt:** Brug kun én 5S LiPo med Buck converter til at levere 5V til elektronik
 
 ### 9. Batteri Charger
 - **LiPo Balance Charger**
@@ -151,17 +165,18 @@ ELLER
 | Kategori | Pris (USD) |
 |----------|------------|
 | Microcontroller | $15-20 |
-| Motor Driver | $5 |
+| Motor Drivers (2x BTS7960) | $20-30 |
 | Motors (2x) | $20-30 |
 | Sensorer (3x) | $6 |
 | IMU | $5-12 |
 | Relay | $3 |
-| Batteri | $30-60 |
-| Charger | $20 |
+| Motor Batteri (5S LiPo) | $40-80 |
+| Kontrol Batteri (3S LiPo) | $20-40 |
+| Chargers | $30-40 |
 | Regulator | $5 |
 | Elektronik dele | $20 |
 | Mekanik | $30-50 |
-| **TOTAL** | **~$160-230** |
+| **TOTAL** | **~$215-335** |
 
 *Priser er ca. og varierer efter leverandør og region*
 
@@ -214,21 +229,35 @@ ELLER
 
 ## ⚡ Power Budget
 
-Estimeret strømforbrug:
+**Motor Power (18V - 5S LiPo):**
 
-| Komponent | Strøm |
-|-----------|-------|
+| Komponent | Strøm (@ 18V) |
+|-----------|---------------|
+| Motors (2x) | 2-10A (last afhængig) |
+| Klippermotor | 2-5A |
+| **Motor Total** | **4-15A** |
+
+Med 5000mAh 5S LiPo batteri:
+- Aktiv klipning: ~30-60 minutter (afhængig af belastning)
+
+**Kontrol Power (5V fra Buck):**
+
+| Komponent | Strøm (@ 5V) |
+|-----------|--------------|
 | ESP32-S3 | ~200mA (peak 500mA) |
-| Motors (2x) | ~500-2000mA (load dependent) |
-| Klippermotor | ~1000-3000mA |
+| BTS7960 Logic (2x) | ~20mA |
 | Sensorer (3x) | ~15mA x 3 = 45mA |
 | IMU | ~5mA |
 | Display | ~20mA |
-| **Total** | **~2-6A** |
+| Relay Module | ~20mA |
+| **Kontrol Total** | **~310-600mA** |
 
-Med 5000mAh batteri:
-- Idle: ~4-5 timer
-- Aktiv klipning: ~45-90 minutter
+Med 3000mAh 3S LiPo batteri:
+- Drift: ~5-10 timer
+
+**Total System Power:**
+- Idle: ~1-2W
+- Aktiv klipning: ~75-300W (afhængig af belastning)
 
 ## 🔧 Vedligeholdelse Dele
 
