@@ -13,6 +13,12 @@ bool Display::begin() {
     return false;
     #endif
 
+    // Aktiver Vext (strømforsyning til OLED display)
+    // På Heltec WiFi Kit 32 V3, skal Vext være LOW for at aktivere
+    pinMode(DISPLAY_VEXT, OUTPUT);
+    digitalWrite(DISPLAY_VEXT, LOW); // LOW = ON for Vext
+    delay(100); // Giv display tid til at starte
+
     // Initialiser U8g2 display (Heltec OLED)
     u8g2 = new U8G2_SSD1306_128X64_NONAME_F_HW_I2C(U8G2_R0, /* reset=*/ U8X8_PIN_NONE,
                                                     /* clock=*/ DISPLAY_SCL,
@@ -28,6 +34,7 @@ bool Display::begin() {
 
     initialized = true;
 
+    Serial.println("[Display] Vext On - Display power enabled");
     Serial.println("[Display] Initialized successfully");
 
     // Vis splash screen

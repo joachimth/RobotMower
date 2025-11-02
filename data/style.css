@@ -1,0 +1,478 @@
+/* ============================================================================
+ * Robot Mower Web Interface - Stylesheet
+ * ============================================================================
+ */
+
+ * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #2ecc71;
+    --danger-color: #e74c3c;
+    --warning-color: #f39c12;
+    --info-color: #3498db;
+    --dark: #2c3e50;
+    --light: #ecf0f1;
+    --text: #34495e;
+    --border: #bdc3c7;
+    --success: #27ae60;
+    --current-warning: #e67e22;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: var(--text);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+header {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    color: var(--dark);
+    font-size: 2em;
+    margin: 0;
+}
+
+h2 {
+    color: var(--dark);
+    margin-bottom: 15px;
+    font-size: 1.5em;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+}
+
+h3 {
+    color: var(--text);
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+/* Connection Status */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.online {
+    background: var(--success);
+}
+
+.status-dot.offline {
+    background: var(--danger-color);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-text {
+    font-weight: 600;
+}
+
+/* Panel */
+.panel {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Status Grid */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.status-item {
+    text-align: center;
+    padding: 15px;
+    background: var(--light);
+    border-radius: 8px;
+}
+
+.status-label {
+    font-size: 0.9em;
+    color: var(--text);
+    margin-bottom: 5px;
+}
+
+.status-value {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--dark);
+}
+
+/* Sensor Grid */
+.sensor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+}
+
+.sensor {
+    text-align: center;
+}
+
+.sensor-label {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.sensor-value {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: var(--info-color);
+    margin-bottom: 10px;
+}
+
+.sensor-bar {
+    width: 100%;
+    height: 20px;
+    background: var(--light);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.sensor-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success), var(--warning-color));
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+/* Current Monitoring */
+.current-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.current-item {
+    padding: 15px;
+    background: var(--light);
+    border-radius: 8px;
+}
+
+.current-item.highlight {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.current-item.highlight .current-label,
+.current-item.highlight .current-value {
+    color: white;
+}
+
+.current-label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: var(--text);
+}
+
+.current-value {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: var(--dark);
+    margin-bottom: 10px;
+}
+
+.current-bar {
+    width: 100%;
+    height: 25px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.current-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success), var(--current-warning), var(--danger-color));
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.current-warning {
+    margin-top: 15px;
+    padding: 12px;
+    background: var(--warning-color);
+    color: white;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+    animation: warningPulse 1s infinite;
+}
+
+@keyframes warningPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Control Section */
+.control-section {
+    margin-bottom: 30px;
+}
+
+.control-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Control Pad */
+.control-pad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.control-row {
+    display: flex;
+    gap: 10px;
+}
+
+.control-btn {
+    width: 100px;
+    height: 100px;
+    border: none;
+    border-radius: 10px;
+    background: var(--info-color);
+    color: white;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.control-btn span {
+    font-size: 2em;
+    margin-bottom: 5px;
+}
+
+.control-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.control-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.control-btn.stop-btn {
+    background: var(--danger-color);
+}
+
+.control-btn.stop-btn:hover {
+    background: #c0392b;
+}
+
+/* Speed Control */
+.speed-control {
+    text-align: center;
+}
+
+.speed-control label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+#speedValue {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+#speedSlider {
+    width: 100%;
+    max-width: 400px;
+    height: 8px;
+    border-radius: 5px;
+    outline: none;
+    -webkit-appearance: none;
+    background: var(--light);
+}
+
+#speedSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+}
+
+#speedSlider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    border: none;
+}
+
+/* Cutting Controls */
+.cutting-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+.cutting-status {
+    margin-top: 10px;
+    padding: 10px;
+    background: var(--light);
+    border-radius: 5px;
+    font-weight: 600;
+}
+
+/* Buttons */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 150px;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #27ae60;
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.btn-warning {
+    background: var(--warning-color);
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #e67e22;
+}
+
+.btn-success {
+    background: var(--success);
+    color: white;
+}
+
+.btn-success:hover {
+    background: #229954;
+}
+
+.btn-secondary {
+    background: var(--text);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: var(--dark);
+}
+
+/* Auto Controls */
+.auto-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* Motor Info */
+.motor-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.motor-status {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    background: var(--light);
+    border-radius: 5px;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+
+    .status-grid,
+    .sensor-grid,
+    .current-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .control-btn {
+        width: 80px;
+        height: 80px;
+    }
+
+    .auto-controls {
+        flex-direction: column;
+    }
+}

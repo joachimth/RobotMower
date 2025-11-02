@@ -7,8 +7,9 @@
 /**
  * Motors klasse - Håndterer begge drive motorer
  *
- * Denne klasse kontrollerer venstre og højre motor via L298N motor driver.
+ * Denne klasse kontrollerer venstre og højre motor via Double BTS7960 43A H-bridge.
  * Hastighed fra -255 (fuld baglæns) til 255 (fuld fremad).
+ * Inkluderer strømovervågning via current sense pins.
  */
 class Motors {
 public:
@@ -82,6 +83,36 @@ public:
      */
     int getRightSpeed();
 
+    /**
+     * Hent venstre motor strøm
+     * @return Strøm i Ampere
+     */
+    float getLeftCurrent();
+
+    /**
+     * Hent højre motor strøm
+     * @return Strøm i Ampere
+     */
+    float getRightCurrent();
+
+    /**
+     * Opdater strømmålinger
+     * Kalder denne regelmæssigt i loop()
+     */
+    void updateCurrentReadings();
+
+    /**
+     * Tjek om strømmen er for høj
+     * @return true hvis over advarsel tærskel
+     */
+    bool isCurrentWarning();
+
+    /**
+     * Hent total strøm (begge motorer)
+     * @return Total strøm i Ampere
+     */
+    float getTotalCurrent();
+
 private:
     /**
      * Sætter venstre motor hastighed og retning
@@ -102,9 +133,21 @@ private:
      */
     int constrainSpeed(int speed);
 
+    /**
+     * Læs strøm fra analog pin med gennemsnit
+     * @param pin ADC pin at læse
+     * @return Strøm i Ampere
+     */
+    float readCurrent(int pin);
+
     // Nuværende motor hastigheder
     int currentLeftSpeed;
     int currentRightSpeed;
+
+    // Strømmålinger
+    float leftMotorCurrent;
+    float rightMotorCurrent;
+    unsigned long lastCurrentUpdate;
 
     // Emergency stop flag
     bool emergencyStopped;

@@ -6,19 +6,21 @@
  *
  * Hardware:
  * - Heltec WiFi Kit 32 V3 (ESP32-S3)
- * - L298N Motor Driver
+ * - Double BTS7960 43A H-bridge Motor Driver (2x for begge motorer)
  * - 3x HC-SR04 Ultralyd Sensorer
  * - MPU-6050/9250 IMU
  * - Relay til klippermotor
- * - 3S LiPo batteri
+ * - 18V (5S LiPo) for motorer og klippemotor
+ * - 12V (3S LiPo) for styringsdel (ESP32)
  *
  * Features:
  * - Systematisk parallelt klipningsmønster
  * - Ultralyd baseret forhindring undgåelse
  * - IMU baseret retningsbestemmelse
- * - Web interface til kontrol
+ * - Web interface til kontrol med manuel kontrol
  * - Real-time telemetri via WebSocket
  * - OLED display status
+ * - Strømovervågning for motordriver (BTS7960 current sense)
  *
  * Author: Robot Mower Project
  * Version: 1.0
@@ -91,6 +93,7 @@ Timer displayUpdateTimer(DISPLAY_UPDATE_INTERVAL, true);
 Timer batteryCheckTimer(BATTERY_CHECK_INTERVAL, true);
 Timer statusUpdateTimer(STATUS_UPDATE_INTERVAL, true);
 Timer websocketUpdateTimer(WEBSOCKET_UPDATE_INTERVAL, true);
+Timer currentUpdateTimer(100, true); // Strømovervågning hver 100ms
 
 // ============================================================================
 // FORWARD DECLARATIONS
@@ -111,6 +114,7 @@ void updateIMU();
 void updateDisplay();
 void updateBattery();
 void updateWebStatus();
+void updateMotorCurrent();
 void checkSafetyConditions();
 
 // ============================================================================
@@ -188,6 +192,11 @@ void loop() {
     if (statusUpdateTimer.isExpired()) {
         updateWebStatus();
         statusUpdateTimer.reset();
+    }
+
+    if (currentUpdateTimer.isExpired()) {
+        updateMotorCurrent();
+        currentUpdateTimer.reset();
     }
 
     // Update state manager
@@ -301,7 +310,7 @@ void initializeWeb() {
     }
 
     // Set hardware references for API
-    webAPI.setHardwareReferences(&stateManager, &battery, &sensors, &imu, &motors);
+    webAPI.setHardwareReferences(&stateManager, &battery, &sensors, &imu, &motors, &cuttingMech);
 
     // Setup API routes
     webAPI.setupRoutes();
@@ -578,6 +587,18 @@ void updateWebStatus() {
         sensors.getRightDistance()
     );
     #endif
+}
+
+void updateMotorCurrent() {
+    // Opdater strømmålinger fra BTS7960 current sense pins
+    motors.updateCurrentReadings();
+
+    // Tjek for strøm advarsel
+    if (motors.isCurrentWarning() && stateManager.isActive()) {
+        Logger::warning("Motor current warning! Left: " +
+                       String(motors.getLeftCurrent(), 2) + "A, Right: " +
+                       String(motors.getRightCurrent(), 2) + "A");
+    }
 }
 
 void checkSafetyConditions() {

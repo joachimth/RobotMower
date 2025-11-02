@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Mower Control</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Robot Plæneklipper</h1>
+            <div class="connection-status" id="wsStatus">
+                <span class="status-dot offline"></span>
+                <span class="status-text">Offline</span>
+            </div>
+        </header>
+
+        <!-- Status Panel -->
+        <div class="panel">
+            <h2>Status</h2>
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="status-label">Tilstand</div>
+                    <div class="status-value" id="state">UNKNOWN</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Batteri</div>
+                    <div class="status-value" id="battery">--V (--)</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Retning</div>
+                    <div class="status-value" id="heading">--°</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Uptime</div>
+                    <div class="status-value" id="uptime">--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sensorer -->
+        <div class="panel">
+            <h2>Sensorer</h2>
+            <div class="sensor-grid">
+                <div class="sensor">
+                    <div class="sensor-label">Venstre</div>
+                    <div class="sensor-value" id="sensorLeft">-- cm</div>
+                    <div class="sensor-bar">
+                        <div class="sensor-fill" id="sensorLeftBar"></div>
+                    </div>
+                </div>
+                <div class="sensor">
+                    <div class="sensor-label">Midt</div>
+                    <div class="sensor-value" id="sensorMiddle">-- cm</div>
+                    <div class="sensor-bar">
+                        <div class="sensor-fill" id="sensorMiddleBar"></div>
+                    </div>
+                </div>
+                <div class="sensor">
+                    <div class="sensor-label">Højre</div>
+                    <div class="sensor-value" id="sensorRight">-- cm</div>
+                    <div class="sensor-bar">
+                        <div class="sensor-fill" id="sensorRightBar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strømovervågning -->
+        <div class="panel">
+            <h2>⚡ Strømovervågning (BTS7960)</h2>
+            <div class="current-grid">
+                <div class="current-item">
+                    <div class="current-label">Venstre Motor</div>
+                    <div class="current-value" id="currentLeft">-- A</div>
+                    <div class="current-bar">
+                        <div class="current-fill" id="currentLeftBar"></div>
+                    </div>
+                </div>
+                <div class="current-item">
+                    <div class="current-label">Højre Motor</div>
+                    <div class="current-value" id="currentRight">-- A</div>
+                    <div class="current-bar">
+                        <div class="current-fill" id="currentRightBar"></div>
+                    </div>
+                </div>
+                <div class="current-item highlight">
+                    <div class="current-label">Total Strøm</div>
+                    <div class="current-value" id="currentTotal">-- A</div>
+                </div>
+            </div>
+            <div class="current-warning" id="currentWarning" style="display:none;">
+                ⚠️ Advarsel: Høj strømforbrug!
+            </div>
+        </div>
+
+        <!-- Manuel Kontrol -->
+        <div class="panel">
+            <h2>Manuel Kontrol</h2>
+
+            <div class="control-section">
+                <h3>Motorer</h3>
+                <div class="control-pad">
+                    <button class="control-btn" id="btnForward" data-action="forward">
+                        <span>▲</span><br>Fremad
+                    </button>
+                    <div class="control-row">
+                        <button class="control-btn" id="btnLeft" data-action="left">
+                            <span>◀</span><br>Venstre
+                        </button>
+                        <button class="control-btn stop-btn" id="btnStop" data-action="stop">
+                            <span>■</span><br>STOP
+                        </button>
+                        <button class="control-btn" id="btnRight" data-action="right">
+                            <span>▶</span><br>Højre
+                        </button>
+                    </div>
+                    <button class="control-btn" id="btnBackward" data-action="backward">
+                        <span>▼</span><br>Baglæns
+                    </button>
+                </div>
+
+                <div class="speed-control">
+                    <label for="speedSlider">Hastighed: <span id="speedValue">200</span></label>
+                    <input type="range" id="speedSlider" min="100" max="255" value="200">
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Klippermotor</h3>
+                <div class="cutting-controls">
+                    <button class="btn btn-success" id="btnCuttingStart">Start Klipning</button>
+                    <button class="btn btn-danger" id="btnCuttingStop">Stop Klipning</button>
+                    <div class="cutting-status" id="cuttingStatus">Status: Stoppet</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Automatisk Kørsel -->
+        <div class="panel">
+            <h2>Automatisk Kørsel</h2>
+            <div class="auto-controls">
+                <button class="btn btn-primary" id="btnStart">Start Klipning</button>
+                <button class="btn btn-warning" id="btnPause">Pause</button>
+                <button class="btn btn-danger" id="btnStopMowing">Stop</button>
+                <button class="btn btn-secondary" id="btnCalibrate">Kalibrér IMU</button>
+            </div>
+        </div>
+
+        <!-- Motor Information -->
+        <div class="panel">
+            <h2>Motor Information</h2>
+            <div class="motor-info">
+                <div class="motor-status">
+                    <span>Venstre Motor:</span>
+                    <span id="motorLeft">0</span>
+                </div>
+                <div class="motor-status">
+                    <span>Højre Motor:</span>
+                    <span id="motorRight">0</span>
+                </div>
+                <div class="motor-status">
+                    <span>Status:</span>
+                    <span id="motorMoving">Stoppet</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

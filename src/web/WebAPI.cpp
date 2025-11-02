@@ -4,6 +4,7 @@
 #include "../hardware/Sensors.h"
 #include "../hardware/IMU.h"
 #include "../hardware/Motors.h"
+#include "../hardware/CuttingMechanism.h"
 
 WebAPI::WebAPI() {
     webServerPtr = nullptr;
@@ -12,6 +13,7 @@ WebAPI::WebAPI() {
     sensorsPtr = nullptr;
     imuPtr = nullptr;
     motorsPtr = nullptr;
+    cuttingMechPtr = nullptr;
     initialized = false;
 }
 
@@ -30,12 +32,14 @@ bool WebAPI::begin(WebServer* webServer) {
 }
 
 void WebAPI::setHardwareReferences(StateManager* state, Battery* batt,
-                                   Sensors* sens, IMU* imuSensor, Motors* mot) {
+                                   Sensors* sens, IMU* imuSensor, Motors* mot,
+                                   CuttingMechanism* cut) {
     stateManagerPtr = state;
     batteryPtr = batt;
     sensorsPtr = sens;
     imuPtr = imuSensor;
     motorsPtr = mot;
+    cuttingMechPtr = cut;
 
     Logger::info("WebAPI hardware references set");
 }
@@ -85,7 +89,53 @@ void WebAPI::setupRoutes() {
         handleGetSettings(request);
     });
 
-    Logger::info("API routes configured");
+    // Manuel kontrol endpoints
+    // POST /api/manual/forward
+    server->on("/api/manual/forward", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handleManualForward(request);
+    });
+
+    // POST /api/manual/backward
+    server->on("/api/manual/backward", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handleManualBackward(request);
+    });
+
+    // POST /api/manual/left
+    server->on("/api/manual/left", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handleManualLeft(request);
+    });
+
+    // POST /api/manual/right
+    server->on("/api/manual/right", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handleManualRight(request);
+    });
+
+    // POST /api/manual/stop
+    server->on("/api/manual/stop", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handleManualStop(request);
+    });
+
+    // POST /api/manual/speed
+    server->on("/api/manual/speed", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handleManualSetSpeed(request);
+    });
+
+    // POST /api/cutting/start
+    server->on("/api/cutting/start", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handleCuttingStart(request);
+    });
+
+    // POST /api/cutting/stop
+    server->on("/api/cutting/stop", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handleCuttingStop(request);
+    });
+
+    // GET /api/current
+    server->on("/api/current", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        handleGetCurrent(request);
+    });
+
+    Logger::info("API routes configured (including manual control)");
 }
 
 void WebAPI::handleGetStatus(AsyncWebServerRequest *request) {
@@ -151,8 +201,8 @@ void WebAPI::handleUpdateSettings(AsyncWebServerRequest *request) {
 }
 
 String WebAPI::createStatusJSON() {
-    // Opret JSON status objekt
-    StaticJsonDocument<512> doc;
+    // Opret JSON status objekt - øget størrelse for strømdata
+    StaticJsonDocument<768> doc;
 
     // State
     if (stateManagerPtr != nullptr) {
@@ -192,6 +242,20 @@ String WebAPI::createStatusJSON() {
         motors["left"] = motorsPtr->getLeftSpeed();
         motors["right"] = motorsPtr->getRightSpeed();
         motors["isMoving"] = motorsPtr->isMoving();
+
+        // Strømdata
+        JsonObject current = motors.createNestedObject("current");
+        current["left"] = motorsPtr->getLeftCurrent();
+        current["right"] = motorsPtr->getRightCurrent();
+        current["total"] = motorsPtr->getTotalCurrent();
+        current["warning"] = motorsPtr->isCurrentWarning();
+    }
+
+    // Cutting mechanism
+    if (cuttingMechPtr != nullptr) {
+        JsonObject cutting = doc.createNestedObject("cutting");
+        cutting["running"] = cuttingMechPtr->isRunning();
+        cutting["safetyLocked"] = cuttingMechPtr->isSafetyLocked();
     }
 
     // System info
@@ -219,4 +283,145 @@ String WebAPI::createSettingsJSON() {
     String output;
     serializeJson(doc, output);
     return output;
+}
+
+// ============================================================================
+// Manuel kontrol handlers
+// ============================================================================
+
+void WebAPI::handleManualForward(AsyncWebServerRequest *request) {
+    if (motorsPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"Motors not initialized\"}");
+        return;
+    }
+
+    int speed = MOTOR_CRUISE_SPEED;
+    if (request->hasParam("speed", true)) {
+        speed = request->getParam("speed", true)->value().toInt();
+    }
+
+    motorsPtr->forward(speed);
+    request->send(200, "application/json", "{\"status\":\"forward\",\"speed\":" + String(speed) + "}");
+    Logger::info("API: Manual forward - speed: " + String(speed));
+}
+
+void WebAPI::handleManualBackward(AsyncWebServerRequest *request) {
+    if (motorsPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"Motors not initialized\"}");
+        return;
+    }
+
+    int speed = MOTOR_CRUISE_SPEED;
+    if (request->hasParam("speed", true)) {
+        speed = request->getParam("speed", true)->value().toInt();
+    }
+
+    motorsPtr->backward(speed);
+    request->send(200, "application/json", "{\"status\":\"backward\",\"speed\":" + String(speed) + "}");
+    Logger::info("API: Manual backward - speed: " + String(speed));
+}
+
+void WebAPI::handleManualLeft(AsyncWebServerRequest *request) {
+    if (motorsPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"Motors not initialized\"}");
+        return;
+    }
+
+    int speed = MOTOR_TURN_SPEED;
+    if (request->hasParam("speed", true)) {
+        speed = request->getParam("speed", true)->value().toInt();
+    }
+
+    motorsPtr->turnLeft(speed);
+    request->send(200, "application/json", "{\"status\":\"left\",\"speed\":" + String(speed) + "}");
+    Logger::info("API: Manual left - speed: " + String(speed));
+}
+
+void WebAPI::handleManualRight(AsyncWebServerRequest *request) {
+    if (motorsPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"Motors not initialized\"}");
+        return;
+    }
+
+    int speed = MOTOR_TURN_SPEED;
+    if (request->hasParam("speed", true)) {
+        speed = request->getParam("speed", true)->value().toInt();
+    }
+
+    motorsPtr->turnRight(speed);
+    request->send(200, "application/json", "{\"status\":\"right\",\"speed\":" + String(speed) + "}");
+    Logger::info("API: Manual right - speed: " + String(speed));
+}
+
+void WebAPI::handleManualStop(AsyncWebServerRequest *request) {
+    if (motorsPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"Motors not initialized\"}");
+        return;
+    }
+
+    motorsPtr->stop();
+    request->send(200, "application/json", "{\"status\":\"stopped\"}");
+    Logger::info("API: Manual stop");
+}
+
+void WebAPI::handleManualSetSpeed(AsyncWebServerRequest *request) {
+    if (motorsPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"Motors not initialized\"}");
+        return;
+    }
+
+    if (!request->hasParam("left", true) || !request->hasParam("right", true)) {
+        request->send(400, "application/json", "{\"error\":\"Missing left or right speed parameter\"}");
+        return;
+    }
+
+    int leftSpeed = request->getParam("left", true)->value().toInt();
+    int rightSpeed = request->getParam("right", true)->value().toInt();
+
+    motorsPtr->setSpeed(leftSpeed, rightSpeed);
+    request->send(200, "application/json",
+                 "{\"status\":\"speed_set\",\"left\":" + String(leftSpeed) +
+                 ",\"right\":" + String(rightSpeed) + "}");
+    Logger::info("API: Manual set speed - left: " + String(leftSpeed) + ", right: " + String(rightSpeed));
+}
+
+void WebAPI::handleCuttingStart(AsyncWebServerRequest *request) {
+    if (cuttingMechPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"Cutting mechanism not initialized\"}");
+        return;
+    }
+
+    cuttingMechPtr->start();
+    request->send(200, "application/json", "{\"status\":\"cutting_started\"}");
+    Logger::info("API: Cutting mechanism started");
+}
+
+void WebAPI::handleCuttingStop(AsyncWebServerRequest *request) {
+    if (cuttingMechPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"Cutting mechanism not initialized\"}");
+        return;
+    }
+
+    cuttingMechPtr->stop();
+    request->send(200, "application/json", "{\"status\":\"cutting_stopped\"}");
+    Logger::info("API: Cutting mechanism stopped");
+}
+
+void WebAPI::handleGetCurrent(AsyncWebServerRequest *request) {
+    if (motorsPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"Motors not initialized\"}");
+        return;
+    }
+
+    StaticJsonDocument<256> doc;
+    doc["leftCurrent"] = motorsPtr->getLeftCurrent();
+    doc["rightCurrent"] = motorsPtr->getRightCurrent();
+    doc["totalCurrent"] = motorsPtr->getTotalCurrent();
+    doc["warning"] = motorsPtr->isCurrentWarning();
+    doc["maxCurrent"] = MOTOR_CURRENT_MAX;
+    doc["warningThreshold"] = MOTOR_CURRENT_WARNING;
+
+    String output;
+    serializeJson(doc, output);
+    request->send(200, "application/json", output);
 }

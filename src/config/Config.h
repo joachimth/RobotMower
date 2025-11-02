@@ -11,14 +11,22 @@
 // PIN DEFINITIONER - ESP32-S3 (Heltec WiFi Kit 32 V3)
 // ============================================================================
 
-// Motor Pins (L298N Motor Driver)
-#define MOTOR_LEFT_PWM      5      // PWM til venstre motor hastighed
-#define MOTOR_LEFT_IN1      19     // Retning 1 for venstre motor
-#define MOTOR_LEFT_IN2      18     // Retning 2 for venstre motor
+// Motor Pins (Double BTS7960 43A H-bridge High-power Motor Driver)
+// Venstre motor driver
+#define MOTOR_LEFT_RPWM     5      // PWM til venstre motor fremad
+#define MOTOR_LEFT_LPWM     19     // PWM til venstre motor baglæns
+#define MOTOR_LEFT_R_EN     18     // Enable for højre side (fremad)
+#define MOTOR_LEFT_L_EN     17     // Enable for venstre side (baglæns)
+#define MOTOR_LEFT_R_IS     2      // Strømsensor højre side (ADC)
+#define MOTOR_LEFT_L_IS     3      // Strømsensor venstre side (ADC)
 
-#define MOTOR_RIGHT_PWM     17     // PWM til højre motor hastighed
-#define MOTOR_RIGHT_IN1     16     // Retning 1 for højre motor
-#define MOTOR_RIGHT_IN2     15     // Retning 2 for højre motor
+// Højre motor driver
+#define MOTOR_RIGHT_RPWM    16     // PWM til højre motor fremad
+#define MOTOR_RIGHT_LPWM    15     // PWM til højre motor baglæns
+#define MOTOR_RIGHT_R_EN    4      // Enable for højre side (fremad)
+#define MOTOR_RIGHT_L_EN    6      // Enable for venstre side (baglæns)
+#define MOTOR_RIGHT_R_IS    7      // Strømsensor højre side (ADC)
+#define MOTOR_RIGHT_L_IS    8      // Strømsensor venstre side (ADC)
 
 // Ultralyd Sensor Pins (HC-SR04)
 #define SENSOR_LEFT_TRIG    21     // Venstre sensor trigger
@@ -45,6 +53,7 @@
 #define DISPLAY_SDA         41     // Samme som IMU (delt I2C bus)
 #define DISPLAY_SCL         42     // Samme som IMU (delt I2C bus)
 #define DISPLAY_RST         -1     // Reset (ikke brugt)
+#define DISPLAY_VEXT        36     // Vext On - strømforsyning til display
 
 // Status LED (indbygget i Heltec)
 #define LED_BUILTIN         35     // Indbygget LED
@@ -85,6 +94,14 @@
 #define MOTOR_KI                    0.1    // Integral gain
 #define MOTOR_KD                    0.5    // Derivative gain
 
+// Strømovervågning (BTS7960)
+#define MOTOR_CURRENT_MAX           43.0   // Maksimal strøm pr. driver (A)
+#define MOTOR_CURRENT_WARNING       35.0   // Advarsel tærskel (A)
+#define MOTOR_CURRENT_SAMPLES       10     // Antal samples til gennemsnit
+#define CURRENT_SENSE_RATIO         0.01   // 10mV/A fra BTS7960
+#define CURRENT_ADC_VREF            3.3    // ADC reference spænding (V)
+#define CURRENT_ADC_MAX             4095.0 // 12-bit ADC
+
 // ============================================================================
 // NAVIGATION KONSTANTER
 // ============================================================================
@@ -117,12 +134,18 @@
 // ============================================================================
 // BATTERI KONSTANTER
 // ============================================================================
+// OBS: Motorer og klippemotor forsynes separat med 18V (5S LiPo)
+// Styringsdelen (ESP32) forsynes med 12V (3S LiPo) via regulator
 
-#define BATTERY_MAX_VOLTAGE         12.6   // Fuldt ladet (3S LiPo)
+#define BATTERY_MAX_VOLTAGE         12.6   // Fuldt ladet (3S LiPo for styring)
 #define BATTERY_NOMINAL_VOLTAGE     11.1   // Nominal spænding
 #define BATTERY_LOW_VOLTAGE         10.5   // Lav batteri advarsel
 #define BATTERY_CRITICAL_VOLTAGE    10.0   // Kritisk batteri - stop operation
 #define BATTERY_MIN_VOLTAGE         9.0    // Absolut minimum
+
+// Motor batteri (18V - 5S LiPo) - kun til reference
+#define MOTOR_BATTERY_MAX_VOLTAGE   21.0   // Fuldt ladet (5S LiPo)
+#define MOTOR_BATTERY_NOMINAL       18.5   // Nominal spænding
 
 // Voltage divider beregning (tilpas efter dit hardware)
 #define BATTERY_R1                  10000.0  // Modstand R1 (ohm)
