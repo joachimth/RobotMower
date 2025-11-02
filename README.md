@@ -11,9 +11,11 @@ Autonome plæneklipper bygget på ESP32-S3 med systematisk klipningsmønster, ul
 - **Systematisk Klipning**: Parallelt række-mønster for effektiv plæneklipning
 - **Forhindring Undgåelse**: 3x ultralyd sensorer til obstacle detection
 - **IMU Navigation**: MPU-6050/9250 til præcis retningsbestemmelse
-- **Web Interface**: Real-time kontrol og monitoring via WiFi
+- **Web Interface**: Komplet responsive web interface med manuel kontrol
 - **WebSocket Telemetri**: Live sensor data og status updates
-- **OLED Display**: Indbygget status display
+- **Strømovervågning**: Real-time strømmåling fra BTS7960 current sense
+- **Manuel Kontrol**: Direkte motor kontrol via web interface
+- **OLED Display**: Indbygget status display med Vext power
 - **Batteri Overvågning**: Automatisk low-battery håndtering
 - **State Machine**: Robust state management system
 - **Logging System**: Comprehensive debug logging
@@ -22,12 +24,13 @@ Autonome plæneklipper bygget på ESP32-S3 med systematisk klipningsmønster, ul
 
 ### Hovedkomponenter
 - **Heltec WiFi Kit 32 V3** (ESP32-S3) - Hovedcontroller
-- **L298N Motor Driver** - DC motor kontrol
-- **2x DC Gear Motors** - Drive motors
+- **2x Double BTS7960 43A H-Bridge Motor Driver** - High-power DC motor kontrol
+- **2x DC Gear Motors** - Drive motors (18V)
 - **3x HC-SR04 Ultralyd Sensorer** - Forhindring detection
 - **MPU-6050 eller MPU-9250** - IMU (accelerometer + gyroscope)
 - **Relay Modul** - Klippermotor kontrol
-- **3S LiPo Batteri** (11.1V) - Power supply
+- **5S LiPo Batteri** (18.5V) - Motor power supply
+- **3S LiPo Batteri** (11.1V) - Control electronics power
 - **Voltage Divider** - Batteri monitoring
 
 ### Valgfrie Komponenter
@@ -46,12 +49,13 @@ Se [PINOUT.md](PINOUT.md) for komplet pin diagram og forbindelser.
 
 | Komponent | Pins |
 |-----------|------|
-| Venstre Motor | PWM: 5, IN1: 19, IN2: 18 |
-| Højre Motor | PWM: 17, IN1: 16, IN2: 15 |
+| Venstre Motor | RPWM: 5, LPWM: 19, R_EN: 18, L_EN: 17, R_IS: 2, L_IS: 3 |
+| Højre Motor | RPWM: 16, LPWM: 15, R_EN: 4, L_EN: 6, R_IS: 7, L_IS: 8 |
 | Venstre Sensor | TRIG: 21, ECHO: 47 |
 | Midter Sensor | TRIG: 48, ECHO: 35 |
 | Højre Sensor | TRIG: 36, ECHO: 37 |
 | IMU | SDA: 41, SCL: 42 |
+| Display Vext | Power: 36 |
 | Klippermotor Relay | Pin: 38 |
 | Batteri Monitor | ADC: 1 |
 
@@ -125,13 +129,28 @@ Efter opstart er web interfacet tilgængeligt på:
 
 Se [API.md](API.md) for komplet API dokumentation.
 
-Hurtig reference:
+**Automatisk Kontrol:**
 - `GET /api/status` - Hent robot status
 - `POST /api/start` - Start klipning
 - `POST /api/stop` - Stop klipning
 - `POST /api/pause` - Pause klipning
 - `POST /api/calibrate` - Kalibrér sensorer
 - `GET /api/logs` - Hent debug logs
+
+**Manuel Kontrol:**
+- `POST /api/manual/forward` - Kør fremad
+- `POST /api/manual/backward` - Kør baglæns
+- `POST /api/manual/left` - Drej venstre
+- `POST /api/manual/right` - Drej højre
+- `POST /api/manual/stop` - Stop motorer
+- `POST /api/manual/speed` - Sæt motorhastighed
+
+**Klippemotor:**
+- `POST /api/cutting/start` - Start klipning
+- `POST /api/cutting/stop` - Stop klipning
+
+**Strømovervågning:**
+- `GET /api/current` - Hent strømdata
 
 ### WebSocket
 

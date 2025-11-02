@@ -6,14 +6,20 @@ Komplet pin mapping for Robot Plæneklipper projektet.
 
 | Component | Pin | ESP32-S3 GPIO | Type | Notes |
 |-----------|-----|---------------|------|-------|
-| **Venstre Motor** |
-| PWM | ENA | GPIO 5 | PWM | Motor hastighed |
-| Direction 1 | IN1 | GPIO 19 | Digital Out | Retning kontrol |
-| Direction 2 | IN2 | GPIO 18 | Digital Out | Retning kontrol |
-| **Højre Motor** |
-| PWM | ENB | GPIO 17 | PWM | Motor hastighed |
-| Direction 1 | IN3 | GPIO 16 | Digital Out | Retning kontrol |
-| Direction 2 | IN4 | GPIO 15 | Digital Out | Retning kontrol |
+| **Venstre Motor (BTS7960)** |
+| Forward PWM | RPWM | GPIO 5 | PWM | Fremad hastighed |
+| Reverse PWM | LPWM | GPIO 19 | PWM | Baglæns hastighed |
+| Forward Enable | R_EN | GPIO 18 | Digital Out | Enable fremad |
+| Reverse Enable | L_EN | GPIO 17 | Digital Out | Enable baglæns |
+| Forward Current | R_IS | GPIO 2 | Analog In | Strømsensor fremad |
+| Reverse Current | L_IS | GPIO 3 | Analog In | Strømsensor baglæns |
+| **Højre Motor (BTS7960)** |
+| Forward PWM | RPWM | GPIO 16 | PWM | Fremad hastighed |
+| Reverse PWM | LPWM | GPIO 15 | PWM | Baglæns hastighed |
+| Forward Enable | R_EN | GPIO 4 | Digital Out | Enable fremad |
+| Reverse Enable | L_EN | GPIO 6 | Digital Out | Enable baglæns |
+| Forward Current | R_IS | GPIO 7 | Analog In | Strømsensor fremad |
+| Reverse Current | L_IS | GPIO 8 | Analog In | Strømsensor baglæns |
 | **Venstre Sensor** |
 | Trigger | TRIG | GPIO 21 | Digital Out | 10µs pulse |
 | Echo | ECHO | GPIO 47 | Digital In | Distance measurement |
@@ -33,6 +39,7 @@ Komplet pin mapping for Robot Plæneklipper projektet.
 | **Display (OLED)** |
 | I2C Data | SDA | GPIO 41 | I2C | Indbygget i Heltec |
 | I2C Clock | SCL | GPIO 42 | I2C | Indbygget i Heltec |
+| Power Control | Vext | GPIO 36 | Digital Out | LOW = ON (Heltec) |
 | **Status LED** |
 | Builtin LED | - | GPIO 35 | Digital Out | Indbygget i Heltec |
 
@@ -40,35 +47,59 @@ Komplet pin mapping for Robot Plæneklipper projektet.
 
 ## 🔌 Detaljerede Forbindelser
 
-### Motor Driver (L298N) Forbindelser
+### Motor Driver (BTS7960) Forbindelser
 
 ```
-ESP32-S3 Pin          L298N Pin           Function
-───────────────────────────────────────────────────────
-GPIO 5           →    ENA                 PWM - Venstre hastighed
-GPIO 19          →    IN1                 Venstre retning bit 1
-GPIO 18          →    IN2                 Venstre retning bit 2
+Venstre Motor Driver:
+────────────────────────────────────────────────────────────────
+ESP32-S3 Pin          BTS7960 Pin         Function
+────────────────────────────────────────────────────────────────
+GPIO 5           →    RPWM                PWM til fremad kørsel
+GPIO 19          →    LPWM                PWM til baglæns kørsel
+GPIO 18          →    R_EN                Enable fremad side
+GPIO 17          →    L_EN                Enable baglæns side
+GPIO 2           →    R_IS                Strømsensor fremad (analog)
+GPIO 3           →    L_IS                Strømsensor baglæns (analog)
 
-GPIO 17          →    ENB                 PWM - Højre hastighed
-GPIO 16          →    IN3                 Højre retning bit 1
-GPIO 15          →    IN4                 Højre retning bit 2
+3.3V             →    VCC                 Logic power
+GND              →    GND                 Ground
 
-GND              →    GND                 Fælles ground
+18V+ (5S LiPo)   →    B+                  Motor power +
+18V- (5S LiPo)   →    B-                  Motor power -
+                      M+, M-         →    Venstre motor +/-
 
-                      OUT1, OUT2     →    Venstre motor +/-
-                      OUT3, OUT4     →    Højre motor +/-
+Højre Motor Driver:
+────────────────────────────────────────────────────────────────
+ESP32-S3 Pin          BTS7960 Pin         Function
+────────────────────────────────────────────────────────────────
+GPIO 16          →    RPWM                PWM til fremad kørsel
+GPIO 15          →    LPWM                PWM til baglæns kørsel
+GPIO 4           →    R_EN                Enable fremad side
+GPIO 6           →    L_EN                Enable baglæns side
+GPIO 7           →    R_IS                Strømsensor fremad (analog)
+GPIO 8           →    L_IS                Strømsensor baglæns (analog)
 
-Batteri +        →    +12V                Motor power
-Batteri -        →    GND                 Ground
+3.3V             →    VCC                 Logic power
+GND              →    GND                 Ground
+
+18V+ (5S LiPo)   →    B+                  Motor power +
+18V- (5S LiPo)   →    B-                  Motor power -
+                      M+, M-         →    Højre motor +/-
 ```
 
-**Motor Retning Logik:**
-| IN1 | IN2 | Retning |
-|-----|-----|---------|
-| LOW | LOW | Stop |
-| HIGH | LOW | Fremad |
-| LOW | HIGH | Baglæns |
-| HIGH | HIGH | Brake |
+**Motor Kontrol Logik:**
+| RPWM | LPWM | R_EN | L_EN | Resultat |
+|------|------|------|------|----------|
+| 0 | 0 | HIGH | HIGH | Stop |
+| 0-255 | 0 | HIGH | HIGH | Fremad (variabel hastighed) |
+| 0 | 0-255 | HIGH | HIGH | Baglæns (variabel hastighed) |
+| X | X | LOW | LOW | Disabled (emergency stop) |
+
+**⚠️ VIGTIGT**:
+- R_EN og L_EN skal være HIGH for at enable driveren
+- ALDRIG sæt både RPWM og LPWM højt samtidigt!
+- Current sense (IS) pins giver 10mV/A output
+- BTS7960 kan håndtere op til 43A kontinuerligt
 
 ---
 
@@ -187,43 +218,56 @@ Display         ESP32-S3 (intern)
 ────────────────────────────────
 SDA         →   GPIO 41          (hardware defineret)
 SCL         →   GPIO 42          (hardware defineret)
+Vext        →   GPIO 36          (power control - LOW = ON)
 RST         →   -                (ikke brugt)
 ```
 
-**⚠️ Note**: Display deler I2C bus med IMU - begge devices skal have unikke adresser.
+**⚠️ VIGTIGT**:
+- På Heltec V3 skal Vext pin sættes LOW for at aktivere display power
+- Display deler I2C bus med IMU - begge devices skal have unikke adresser
+- Uden Vext aktivering vil displayet ikke få strøm!
 
 ---
 
 ## ⚡ Power Distribution
 
 ```
-                    3S LiPo Battery (11.1V - 12.6V)
-                              │
-                              ├─────────────────────────┐
-                              │                         │
-                        L298N Motor Driver        Buck Converter
-                         (12V input)               (12V → 5V, 3A)
-                              │                         │
-                    ┌─────────┴──────────┐             │
-                    │                    │             │
-              Venstre Motor         Højre Motor        │
-                (12V DC)              (12V DC)         │
-                                                        │
-                    ┌───────────────────────────────────┤
-                    │                                   │
-              Relay Module                        ESP32 VIN (5V)
-              (5V input)                                │
-                    │                                   │
-              Klippermotor                        ┌─────┴─────┐
-              (12V DC via relay)                  │           │
-                                            Sensorer (5V)   IMU (3.3V)
-                                            HC-SR04 x3      MPU-6050/9250
+                    5S LiPo Battery (18.5V - 21V)    3S LiPo Battery (11.1V - 12.6V)
+                    [Motor Power]                    [Control Power]
+                              │                              │
+                              ├──────────────┐              │
+                              │              │              │
+                    BTS7960 Venstre   BTS7960 Højre   Buck Converter
+                    Motor Driver      Motor Driver    (12V → 5V, 3A)
+                    (18V input)       (18V input)           │
+                              │              │              │
+                    ┌─────────┴──────┐       │              │
+                    │                │       │              │
+              Venstre Motor    Højre Motor   │              │
+                (18V DC)         (18V DC)    │              │
+                                             │              │
+              Current Sense (R_IS, L_IS)     │              │
+              → GPIO 2,3,7,8 (ADC)           │              │
+                                             │              │
+                    ┌────────────────────────┼──────────────┤
+                    │                        │              │
+              Relay Module             Klippermotor   ESP32 VIN (5V)
+              (5V input)              (18V via relay)       │
+                    │                        │         ┌────┴─────┐
+                    │                        │         │          │
+              Relay Kontakt ─────────────────┘   Sensorer    IMU (3.3V)
+              (18V switching)                   HC-SR04 x3   MPU-6050/9250
+                                                   (5V)
 ```
 
-**⚠️ VIGTIGT**:
-- Fælles GND mellem ALLE komponenter!
+**⚠️ KRITISK VIGTIGT**:
+- **ADSKILT STRØMFORSYNING**: Motorer (18V) og kontrol (12V→5V) er SEPARATE!
+- **FÆLLES GND**: Alle GND skal forbindes sammen (både 18V og 12V system)
+- BTS7960 drivere får 18V power fra 5S LiPo
+- BTS7960 logic (VCC) forbindes til 3.3V fra ESP32
 - Buck converter skal levere minimum 3A ved 5V
 - ESP32 VIN pin kan tage 5V input (intern regulator til 3.3V)
+- Klippermotor bruger også 18V power via relay
 
 ---
 
@@ -251,14 +295,17 @@ RST         →   -                (ikke brugt)
 
 ## 📊 Pin Usage Summary
 
-| Total GPIOs Used | 18 |
+| Total GPIOs Used | 26 |
 |------------------|-----|
-| Digital Out | 10 |
+| Digital Out | 9 |
 | Digital In | 3 |
-| PWM Out | 2 |
+| PWM Out | 4 |
 | I2C | 2 (shared) |
-| ADC | 1 |
-| **Available** | **~12+** |
+| ADC (Current Sense) | 4 |
+| ADC (Battery) | 1 |
+| Power Control | 1 |
+| Relay | 1 |
+| **Available** | **~6+** |
 
 ---
 
@@ -267,11 +314,25 @@ RST         →   -                (ikke brugt)
 For at ændre pins, rediger `config/Config.h`:
 
 ```cpp
-// Motor Pins
-#define MOTOR_LEFT_PWM      5      // PWM
-#define MOTOR_LEFT_IN1      19     // Digital
-#define MOTOR_LEFT_IN2      18     // Digital
-// ... etc
+// Motor Pins (BTS7960)
+// Venstre motor driver
+#define MOTOR_LEFT_RPWM     5      // PWM til fremad
+#define MOTOR_LEFT_LPWM     19     // PWM til baglæns
+#define MOTOR_LEFT_R_EN     18     // Enable fremad
+#define MOTOR_LEFT_L_EN     17     // Enable baglæns
+#define MOTOR_LEFT_R_IS     2      // Strømsensor fremad (ADC)
+#define MOTOR_LEFT_L_IS     3      // Strømsensor baglæns (ADC)
+
+// Højre motor driver
+#define MOTOR_RIGHT_RPWM    16     // PWM til fremad
+#define MOTOR_RIGHT_LPWM    15     // PWM til baglæns
+#define MOTOR_RIGHT_R_EN    4      // Enable fremad
+#define MOTOR_RIGHT_L_EN    6      // Enable baglæns
+#define MOTOR_RIGHT_R_IS    7      // Strømsensor fremad (ADC)
+#define MOTOR_RIGHT_L_IS    8      // Strømsensor baglæns (ADC)
+
+// Display
+#define DISPLAY_VEXT        36     // Vext On (LOW = power on)
 ```
 
 Efter ændring, opdater dine fysiske forbindelser tilsvarende!
