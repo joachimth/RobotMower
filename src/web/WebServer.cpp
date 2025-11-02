@@ -1,4 +1,5 @@
 #include "WebServer.h"
+#include <LittleFS.h>
 
 WebServer::WebServer() {
     server = nullptr;
@@ -11,6 +12,13 @@ WebServer::WebServer() {
 
 bool WebServer::begin() {
     Logger::info("Starting web server...");
+
+    // Initialize LittleFS for serving static files
+    if (!LittleFS.begin(true)) {
+        Logger::warning("LittleFS Mount Failed - continuing without static files");
+    } else {
+        Logger::info("LittleFS mounted successfully");
+    }
 
     // Opret server objekt
     server = new AsyncWebServer(WEB_SERVER_PORT);
@@ -68,9 +76,41 @@ void WebServer::setupRoutes() {
         return;
     }
 
-    // Root route
-    server->on("/", HTTP_GET, [this](AsyncWebServerRequest *request) {
-        handleRoot(request);
+    // Serve static files from LittleFS
+    // Root - serve index.html
+    server->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+        if (LittleFS.exists("/index.html")) {
+            request->send(LittleFS, "/index.html", "text/html");
+        } else {
+            // Fallback if LittleFS not available
+            String html = "<!DOCTYPE html><html><head><title>Robot Mower</title>";
+            html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
+            html += "</head><body>";
+            html += "<h1>Robot Mower Control</h1>";
+            html += "<p>Welcome to Robot Mower web interface!</p>";
+            html += "<p><a href='/api/status'>View Status (JSON)</a></p>";
+            html += "<p>Note: Upload data files to enable full web interface</p>";
+            html += "</body></html>";
+            request->send(200, "text/html", html);
+        }
+    });
+
+    // Serve CSS file
+    server->on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request) {
+        if (LittleFS.exists("/style.css")) {
+            request->send(LittleFS, "/style.css", "text/css");
+        } else {
+            request->send(404, "text/plain", "File not found");
+        }
+    });
+
+    // Serve JavaScript file
+    server->on("/app.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+        if (LittleFS.exists("/app.js")) {
+            request->send(LittleFS, "/app.js", "application/javascript");
+        } else {
+            request->send(404, "text/plain", "File not found");
+        }
     });
 
     // Not found handler
@@ -78,7 +118,7 @@ void WebServer::setupRoutes() {
         handleNotFound(request);
     });
 
-    Logger::info("Web routes configured");
+    Logger::info("Web routes configured (with LittleFS support)");
 }
 
 bool WebServer::isClientConnected() {
@@ -148,19 +188,6 @@ void WebServer::setupMDNS() {
     }
 }
 
-void WebServer::handleRoot(AsyncWebServerRequest *request) {
-    // Send HTML response
-    String html = "<!DOCTYPE html><html><head><title>Robot Mower</title>";
-    html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
-    html += "</head><body>";
-    html += "<h1>Robot Mower Control</h1>";
-    html += "<p>Welcome to Robot Mower web interface!</p>";
-    html += "<p><a href='/api/status'>View Status (JSON)</a></p>";
-    html += "<p>Full web interface will be served from /data/ folder</p>";
-    html += "</body></html>";
-
-    request->send(200, "text/html", html);
-}
 
 void WebServer::handleNotFound(AsyncWebServerRequest *request) {
     String message = "404 Not Found\n\n";

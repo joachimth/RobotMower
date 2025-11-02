@@ -14,6 +14,7 @@ class Battery;
 class Sensors;
 class IMU;
 class Motors;
+class CuttingMechanism;
 
 /**
  * WebAPI klasse - Håndterer REST API endpoints
@@ -41,9 +42,11 @@ public:
      * @param sens Sensors pointer
      * @param imuSensor IMU pointer
      * @param mot Motors pointer
+     * @param cut CuttingMechanism pointer
      */
     void setHardwareReferences(StateManager* state, Battery* batt,
-                              Sensors* sens, IMU* imuSensor, Motors* mot);
+                              Sensors* sens, IMU* imuSensor, Motors* mot,
+                              CuttingMechanism* cut);
 
     /**
      * Opsætter alle API routes
@@ -80,6 +83,17 @@ private:
     void handleGetSettings(AsyncWebServerRequest *request);
     void handleUpdateSettings(AsyncWebServerRequest *request);
 
+    // Manuel kontrol handlers
+    void handleManualForward(AsyncWebServerRequest *request);
+    void handleManualBackward(AsyncWebServerRequest *request);
+    void handleManualLeft(AsyncWebServerRequest *request);
+    void handleManualRight(AsyncWebServerRequest *request);
+    void handleManualStop(AsyncWebServerRequest *request);
+    void handleManualSetSpeed(AsyncWebServerRequest *request);
+    void handleCuttingStart(AsyncWebServerRequest *request);
+    void handleCuttingStop(AsyncWebServerRequest *request);
+    void handleGetCurrent(AsyncWebServerRequest *request);
+
     // Hardware pointers
     WebServer* webServerPtr;
     StateManager* stateManagerPtr;
@@ -87,6 +101,7 @@ private:
     Sensors* sensorsPtr;
     IMU* imuPtr;
     Motors* motorsPtr;
+    CuttingMechanism* cuttingMechPtr;
 
     // State
     bool initialized;
