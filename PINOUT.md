@@ -4,44 +4,83 @@ Komplet pin mapping for Robot Plæneklipper projektet.
 
 ## 🎯 Quick Reference Table
 
-| Component | Pin | ESP32-S3 GPIO | Type | Notes |
-|-----------|-----|---------------|------|-------|
+| Component | Function | Heltec Pin | GPIO# | Type | Notes |
+|-----------|----------|------------|-------|------|-------|
 | **Venstre Motor (BTS7960)** |
-| Forward PWM | RPWM | GPIO 5 | PWM | Fremad hastighed |
-| Reverse PWM | LPWM | GPIO 19 | PWM | Baglæns hastighed |
-| Forward Enable | R_EN | GPIO 18 | Digital Out | Enable fremad |
-| Reverse Enable | L_EN | GPIO 17 | Digital Out | Enable baglæns |
-| Forward Current | R_IS | GPIO 2 | Analog In | Strømsensor fremad |
-| Reverse Current | L_IS | GPIO 3 | Analog In | Strømsensor baglæns |
+| Forward PWM | RPWM | Pin 14 | GPIO 5 | PWM | Fremad hastighed |
+| Reverse PWM | LPWM | Pin 26 | GPIO 19 | PWM | Baglæns hastighed |
+| Forward Enable | R_EN | Pin 25 | GPIO 18 | Digital Out | Enable fremad |
+| Reverse Enable | L_EN | Pin 24 | GPIO 17 | Digital Out | Enable baglæns |
+| Forward Current | R_IS | Pin 12 | GPIO 2 | Analog In | Strømsensor fremad |
+| Reverse Current | L_IS | Pin 13 | GPIO 3 | Analog In | Strømsensor baglæns |
 | **Højre Motor (BTS7960)** |
-| Forward PWM | RPWM | GPIO 16 | PWM | Fremad hastighed |
-| Reverse PWM | LPWM | GPIO 15 | PWM | Baglæns hastighed |
-| Forward Enable | R_EN | GPIO 4 | Digital Out | Enable fremad |
-| Reverse Enable | L_EN | GPIO 6 | Digital Out | Enable baglæns |
-| Forward Current | R_IS | GPIO 7 | Analog In | Strømsensor fremad |
-| Reverse Current | L_IS | GPIO 8 | Analog In | Strømsensor baglæns |
+| Forward PWM | RPWM | Pin 23 | GPIO 16 | PWM | Fremad hastighed |
+| Reverse PWM | LPWM | Pin 22 | GPIO 15 | PWM | Baglæns hastighed |
+| Forward Enable | R_EN | Pin 15 | GPIO 4 | Digital Out | Enable fremad |
+| Reverse Enable | L_EN | Pin 17 | GPIO 6 | Digital Out | Enable baglæns |
+| Forward Current | R_IS | Pin 18 | GPIO 7 | Analog In | Strømsensor fremad |
+| Reverse Current | L_IS | Pin 19 | GPIO 8 | Analog In | Strømsensor baglæns |
 | **Venstre Sensor** |
-| Trigger | TRIG | GPIO 21 | Digital Out | 10µs pulse |
-| Echo | ECHO | GPIO 47 | Digital In | Distance measurement |
+| Trigger | TRIG | Pin 28 | GPIO 21 | Digital Out | 10µs pulse |
+| Echo | ECHO | Pin 39 | GPIO 47 | Digital In | Distance measurement |
 | **Midter Sensor** |
-| Trigger | TRIG | GPIO 48 | Digital Out | 10µs pulse |
-| Echo | ECHO | GPIO 35 | Digital In | Distance measurement |
+| Trigger | TRIG | Pin 40 | GPIO 48 | Digital Out | 10µs pulse |
+| Echo | ECHO | Pin 8 | GPIO 35 | Digital In | Distance measurement |
 | **Højre Sensor** |
-| Trigger | TRIG | GPIO 36 | Digital Out | 10µs pulse |
-| Echo | ECHO | GPIO 37 | Digital In | Distance measurement |
+| Trigger | TRIG | Pin 9 | GPIO 36 | Digital Out | 10µs pulse |
+| Echo | ECHO | Pin 10 | GPIO 37 | Digital In | Distance measurement |
 | **IMU (MPU-6050/9250)** |
-| I2C Data | SDA | GPIO 41 | I2C | Delt med display |
-| I2C Clock | SCL | GPIO 42 | I2C | Delt med display |
+| I2C Data | SDA | Pin 5 | GPIO 41 | I2C | Delt med display |
+| I2C Clock | SCL | Pin 6 | GPIO 42 | I2C | Delt med display |
 | **Klippermotor** |
-| Relay Control | IN | GPIO 38 | Digital Out | HIGH = ON |
+| Relay Control | IN | Pin 11 | GPIO 38 | Digital Out | HIGH = ON |
 | **Batteri Monitor** |
-| Voltage Sense | ADC | GPIO 1 | Analog In | Via voltage divider |
+| Voltage Sense | ADC | Pin 2 | GPIO 1 | Analog In | Via voltage divider |
 | **Display (OLED)** |
-| I2C Data | SDA | GPIO 41 | I2C | Indbygget i Heltec |
-| I2C Clock | SCL | GPIO 42 | I2C | Indbygget i Heltec |
-| Power Control | Vext | GPIO 36 | Digital Out | LOW = ON (Heltec) |
+| I2C Data | SDA | Pin 5 | GPIO 41 | I2C | Indbygget i Heltec |
+| I2C Clock | SCL | Pin 6 | GPIO 42 | I2C | Indbygget i Heltec |
+| Power Control | Vext | Pin 9 | GPIO 36 | Digital Out | LOW = ON (Heltec) |
 | **Status LED** |
-| Builtin LED | - | GPIO 35 | Digital Out | Indbygget i Heltec |
+| Builtin LED | - | Pin 8 | GPIO 35 | Digital Out | Indbygget i Heltec |
+
+**Note**: Pin numre refererer til fysisk pin location på Heltec WiFi Kit 32 V3 board
+
+---
+
+## 📍 Heltec WiFi Kit 32 V3 - Pin Layout
+
+```
+Heltec WiFi Kit 32 V3 Physical Pinout:
+
+Left Side (Top to Bottom):          Right Side (Top to Bottom):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━        ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Pin 1  - 3.3V                        Pin 40 - GPIO 48 (TRIG Midter)
+Pin 2  - GPIO 1  (Battery ADC)       Pin 39 - GPIO 47 (ECHO Venstre)
+Pin 3  - GND                         Pin 38 - 5V
+Pin 4  - GND                         Pin 37 - GND
+Pin 5  - GPIO 41 (SDA)               Pin 36 - GND
+Pin 6  - GPIO 42 (SCL)               Pin 35 - RST
+Pin 7  - GND                         Pin 34 - GND
+Pin 8  - GPIO 35 (ECHO Midter)       Pin 33 - NC
+Pin 9  - GPIO 36 (Vext/TRIG Højre)   Pin 32 - NC
+Pin 10 - GPIO 37 (ECHO Højre)        Pin 31 - NC
+Pin 11 - GPIO 38 (Relay)             Pin 30 - NC
+Pin 12 - GPIO 2  (L Motor R_IS)      Pin 29 - NC
+Pin 13 - GPIO 3  (L Motor L_IS)      Pin 28 - GPIO 21 (TRIG Venstre)
+Pin 14 - GPIO 5  (L Motor RPWM)      Pin 27 - GND
+Pin 15 - GPIO 4  (R Motor R_EN)      Pin 26 - GPIO 19 (L Motor LPWM)
+Pin 16 - GND                         Pin 25 - GPIO 18 (L Motor R_EN)
+Pin 17 - GPIO 6  (R Motor L_EN)      Pin 24 - GPIO 17 (L Motor L_EN)
+Pin 18 - GPIO 7  (R Motor R_IS)      Pin 23 - GPIO 16 (R Motor RPWM)
+Pin 19 - GPIO 8  (R Motor L_IS)      Pin 22 - GPIO 15 (R Motor LPWM)
+Pin 20 - 5V                          Pin 21 - GND
+```
+
+**⚠️ VIGTIGT**:
+- Pin numre er fysiske positioner på boardet
+- GPIO numre er de logiske pin numre brugt i koden
+- Heltec V3 har nogle pins reserved til USB, Flash, osv.
+- OLED display og Vext er indbygget på GPIO 41, 42, 36
 
 ---
 
@@ -316,23 +355,37 @@ For at ændre pins, rediger `config/Config.h`:
 ```cpp
 // Motor Pins (BTS7960)
 // Venstre motor driver
-#define MOTOR_LEFT_RPWM     5      // PWM til fremad
-#define MOTOR_LEFT_LPWM     19     // PWM til baglæns
-#define MOTOR_LEFT_R_EN     18     // Enable fremad
-#define MOTOR_LEFT_L_EN     17     // Enable baglæns
-#define MOTOR_LEFT_R_IS     2      // Strømsensor fremad (ADC)
-#define MOTOR_LEFT_L_IS     3      // Strømsensor baglæns (ADC)
+#define MOTOR_LEFT_RPWM     5      // Pin 14 - PWM til fremad
+#define MOTOR_LEFT_LPWM     19     // Pin 26 - PWM til baglæns
+#define MOTOR_LEFT_R_EN     18     // Pin 25 - Enable fremad
+#define MOTOR_LEFT_L_EN     17     // Pin 24 - Enable baglæns
+#define MOTOR_LEFT_R_IS     2      // Pin 12 - Strømsensor fremad (ADC)
+#define MOTOR_LEFT_L_IS     3      // Pin 13 - Strømsensor baglæns (ADC)
 
 // Højre motor driver
-#define MOTOR_RIGHT_RPWM    16     // PWM til fremad
-#define MOTOR_RIGHT_LPWM    15     // PWM til baglæns
-#define MOTOR_RIGHT_R_EN    4      // Enable fremad
-#define MOTOR_RIGHT_L_EN    6      // Enable baglæns
-#define MOTOR_RIGHT_R_IS    7      // Strømsensor fremad (ADC)
-#define MOTOR_RIGHT_L_IS    8      // Strømsensor baglæns (ADC)
+#define MOTOR_RIGHT_RPWM    16     // Pin 23 - PWM til fremad
+#define MOTOR_RIGHT_LPWM    15     // Pin 22 - PWM til baglæns
+#define MOTOR_RIGHT_R_EN    4      // Pin 15 - Enable fremad
+#define MOTOR_RIGHT_L_EN    6      // Pin 17 - Enable baglæns
+#define MOTOR_RIGHT_R_IS    7      // Pin 18 - Strømsensor fremad (ADC)
+#define MOTOR_RIGHT_L_IS    8      // Pin 19 - Strømsensor baglæns (ADC)
 
-// Display
-#define DISPLAY_VEXT        36     // Vext On (LOW = power on)
+// Sensorer
+#define SENSOR_LEFT_TRIG    21     // Pin 28
+#define SENSOR_LEFT_ECHO    47     // Pin 39
+#define SENSOR_MID_TRIG     48     // Pin 40
+#define SENSOR_MID_ECHO     35     // Pin 8
+#define SENSOR_RIGHT_TRIG   36     // Pin 9
+#define SENSOR_RIGHT_ECHO   37     // Pin 10
+
+// Display og IMU
+#define DISPLAY_SDA         41     // Pin 5 (delt med IMU)
+#define DISPLAY_SCL         42     // Pin 6 (delt med IMU)
+#define DISPLAY_VEXT        36     // Pin 9 - Vext On (LOW = power on)
+
+// Relay og Batteri
+#define RELAY_PIN           38     // Pin 11 - Klippermotor
+#define BATTERY_ADC         1      // Pin 2 - Battery voltage sense
 ```
 
 Efter ændring, opdater dine fysiske forbindelser tilsvarende!
