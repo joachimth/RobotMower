@@ -161,35 +161,66 @@ git clone https://github.com/ESP32Async/ESPAsyncWebServer.git
 Check at du har alle komponenter fra [HARDWARE.md](HARDWARE.md):
 
 - [ ] Heltec WiFi Kit 32 V3
-- [ ] L298N Motor Driver
-- [ ] 2x DC Gear Motors
+- [ ] 2x Double BTS7960 43A H-Bridge Motor Driver
+- [ ] 2x DC Gear Motors (18V)
 - [ ] 3x HC-SR04 Ultralyd Sensorer
 - [ ] MPU-6050/9250 IMU
 - [ ] Relay Modul
-- [ ] 3S LiPo Batteri
+- [ ] 5S LiPo Batteri (18V for motorer)
+- [ ] 3S LiPo Batteri (12V for kontrol)
+- [ ] Buck Converter (12V → 5V)
 - [ ] Forbindingsledninger
 - [ ] Chassis/ramme
 
-### Trin 2.2: Motor Driver Forbindelser
+### Trin 2.2: Motor Driver Forbindelser (BTS7960)
 
 Følg [PINOUT.md](PINOUT.md) for detaljerede forbindelser.
 
-#### L298N → ESP32 Forbindelser:
+#### Venstre Motor (BTS7960) → ESP32 Forbindelser:
 ```
-L298N                     ESP32-S3
+BTS7960                   ESP32-S3
 ─────────────────────────────────────
-ENA (PWM venstre)    →    GPIO 5
-IN1 (venstre retning)→    GPIO 19
-IN2 (venstre retning)→    GPIO 18
-IN3 (højre retning)  →    GPIO 16
-IN4 (højre retning)  →    GPIO 15
-ENB (PWM højre)      →    GPIO 17
+RPWM (fremad PWM)    →    GPIO 5
+LPWM (baglæns PWM)   →    GPIO 19
+R_EN (fremad enable) →    GPIO 18
+L_EN (baglæns enable)→    GPIO 17
+R_IS (strømsensor)   →    GPIO 2  (ADC)
+L_IS (strømsensor)   →    GPIO 3  (ADC)
 
-+12V                 →    Batteri +
-GND                  →    Batteri - & ESP32 GND
+VCC (logic)          →    3.3V
+GND                  →    GND
+
+B+ (motor power)     →    18V+ (5S LiPo)
+B- (motor power)     →    18V- (5S LiPo)
+M+, M-               →    Venstre motor
 ```
 
-⚠️ **VIGTIGT**: Husk fælles GND mellem ESP32 og motor driver!
+#### Højre Motor (BTS7960) → ESP32 Forbindelser:
+```
+BTS7960                   ESP32-S3
+─────────────────────────────────────
+RPWM (fremad PWM)    →    GPIO 16
+LPWM (baglæns PWM)   →    GPIO 15
+R_EN (fremad enable) →    GPIO 4
+L_EN (baglæns enable)→    GPIO 6
+R_IS (strømsensor)   →    GPIO 7  (ADC)
+L_IS (strømsensor)   →    GPIO 8  (ADC)
+
+VCC (logic)          →    3.3V
+GND                  →    GND
+
+B+ (motor power)     →    18V+ (5S LiPo)
+B- (motor power)     →    18V- (5S LiPo)
+M+, M-               →    Højre motor
+```
+
+⚠️ **VIGTIGT**:
+- Husk fælles GND mellem ESP32, begge BTS7960 drivers og batteri!
+- BTS7960 logic (VCC) forbindes til 3.3V fra ESP32
+- BTS7960 motor power (B+/B-) forbindes til 18V fra 5S LiPo
+- R_EN og L_EN skal være HIGH for at enable driveren
+- ALDRIG sæt både RPWM og LPWM højt samtidigt!
+- Current sense pins (R_IS, L_IS) giver 10mV/A output
 
 ### Trin 2.3: Sensor Forbindelser
 
@@ -263,17 +294,33 @@ Batteri + → [R1: 10kΩ] → [Målepunkt] → [R2: 2.2kΩ] → GND
 ### Trin 2.7: Power Distribution
 
 ```
-3S LiPo Batteri (11.1V)
-    ↓
-    ├─→ L298N Motor Driver (12V input)
-    ├─→ Klippermotor Relay (via relay)
-    ├─→ Buck Converter (11.1V → 5V)
-    │       ↓
-    │       ├─→ ESP32 VIN (5V)
-    │       ├─→ Sensorer (5V)
-    │       └─→ Relay (5V)
-    └─→ Voltage Divider til monitoring
+5S LiPo Batteri (18.5V)           3S LiPo Batteri (11.1V)
+[Motor Power]                     [Control Power]
+    ↓                                  ↓
+    ├─────────────┐                    │
+    │             │                    │
+BTS7960       BTS7960            Buck Converter
+Venstre       Højre              (12V → 5V, 3A)
+Driver        Driver                   ↓
+    │             │              ┌─────┼─────┐
+Venstre      Højre              │     │     │
+Motor        Motor          ESP32   Sensorer Relay
+(18V)        (18V)          VIN(5V) (5V)    (5V)
+    │             │                    │
+    │             │              Voltage Divider
+    │             │              → GPIO 1 (ADC)
+    │             │
+Klippermotor (18V via relay)
 ```
+
+**⚠️ KRITISK VIGTIGT**:
+- **ADSKILT STRØMFORSYNING**: Motorer (18V fra 5S) og kontrol (12V fra 3S) er SEPARATE!
+- **FÆLLES GND**: Alle GND skal forbindes sammen (både 18V og 12V system)
+- BTS7960 drivere får 18V power fra 5S LiPo (B+/B-)
+- BTS7960 logic (VCC) forbindes til 3.3V fra ESP32
+- Buck converter skal levere minimum 3A ved 5V
+- ESP32 VIN pin kan tage 5V input (intern regulator til 3.3V)
+- Klippermotor bruger også 18V power via relay
 
 ### Trin 2.8: Første Power-On Test
 
