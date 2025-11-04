@@ -4,83 +4,91 @@ Komplet pin mapping for Robot Plæneklipper projektet.
 
 ## 🎯 Quick Reference Table
 
-| Component | Function | Heltec Pin | GPIO# | Type | Notes |
-|-----------|----------|------------|-------|------|-------|
+| Component | Function | Header | Pin# | GPIO# | Type | Notes |
+|-----------|----------|--------|------|-------|------|-------|
 | **Venstre Motor (BTS7960)** |
-| Forward PWM | RPWM | Pin 14 | GPIO 5 | PWM | Fremad hastighed |
-| Reverse PWM | LPWM | Pin 26 | GPIO 19 | PWM | Baglæns hastighed |
-| Forward Enable | R_EN | Pin 25 | GPIO 18 | Digital Out | Enable fremad |
-| Reverse Enable | L_EN | Pin 24 | GPIO 17 | Digital Out | Enable baglæns |
-| Forward Current | R_IS | Pin 12 | GPIO 2 | Analog In | Strømsensor fremad |
-| Reverse Current | L_IS | Pin 13 | GPIO 3 | Analog In | Strømsensor baglæns |
+| Forward PWM | RPWM | J2 | 14 | GPIO 5 | PWM | Fremad hastighed |
+| Reverse PWM | LPWM | J2 | 11 | GPIO 19 | PWM | Baglæns hastighed |
+| Forward Enable | R_EN | J3 | 4 | GPIO 26 | Digital Out | Enable fremad |
+| Reverse Enable | L_EN | J3 | 7 | GPIO 33 | Digital Out | Enable baglæns |
+| Forward Current | R_IS | J2 | 17 | GPIO 2 | Analog In | Strømsensor fremad |
+| Reverse Current | L_IS | J2 | 16 | GPIO 3 | Analog In | Strømsensor baglæns |
 | **Højre Motor (BTS7960)** |
-| Forward PWM | RPWM | Pin 23 | GPIO 16 | PWM | Fremad hastighed |
-| Reverse PWM | LPWM | Pin 22 | GPIO 15 | PWM | Baglæns hastighed |
-| Forward Enable | R_EN | Pin 15 | GPIO 4 | Digital Out | Enable fremad |
-| Reverse Enable | L_EN | Pin 17 | GPIO 6 | Digital Out | Enable baglæns |
-| Forward Current | R_IS | Pin 18 | GPIO 7 | Analog In | Strømsensor fremad |
-| Reverse Current | L_IS | Pin 19 | GPIO 8 | Analog In | Strømsensor baglæns |
+| Forward PWM | RPWM | J3 | 8 | GPIO 34 | PWM | Fremad hastighed |
+| Reverse PWM | LPWM | J2 | 10 | GPIO 20 | PWM | Baglæns hastighed |
+| Forward Enable | R_EN | J2 | 15 | GPIO 4 | Digital Out | Enable fremad |
+| Reverse Enable | L_EN | J2 | 13 | GPIO 6 | Digital Out | Enable baglæns |
+| Forward Current | R_IS | J2 | 12 | GPIO 7 | Analog In | Strømsensor fremad |
+| Reverse Current | L_IS | J3 | 11 | GPIO 37 | Analog In | Strømsensor baglæns |
 | **Venstre Sensor** |
-| Trigger | TRIG | Pin 28 | GPIO 21 | Digital Out | 10µs pulse |
-| Echo | ECHO | Pin 39 | GPIO 47 | Digital In | Distance measurement |
+| Trigger | TRIG | J2 | 9 | GPIO 21 | Digital Out | 10µs pulse |
+| Echo | ECHO | J3 | 6 | GPIO 47 | Digital In | Distance measurement |
 | **Midter Sensor** |
-| Trigger | TRIG | Pin 40 | GPIO 48 | Digital Out | 10µs pulse |
-| Echo | ECHO | Pin 8 | GPIO 35 | Digital In | Distance measurement |
+| Trigger | TRIG | J3 | 5 | GPIO 48 | Digital Out | 10µs pulse |
+| Echo | ECHO | J3 | 9 | GPIO 35 | Digital In | Distance measurement |
 | **Højre Sensor** |
-| Trigger | TRIG | Pin 9 | GPIO 36 | Digital Out | 10µs pulse |
-| Echo | ECHO | Pin 10 | GPIO 37 | Digital In | Distance measurement |
+| Trigger | TRIG | J3 | 13 | GPIO 39 | Digital Out | 10µs pulse |
+| Echo | ECHO | J3 | 14 | GPIO 40 | Digital In | Distance measurement |
 | **IMU (MPU-6050/9250)** |
-| I2C Data | SDA | Pin 5 | GPIO 41 | I2C | Delt med display |
-| I2C Clock | SCL | Pin 6 | GPIO 42 | I2C | Delt med display |
+| I2C Data | SDA | J3 | 15 | GPIO 41 | I2C | Delt med display |
+| I2C Clock | SCL | J3 | 16 | GPIO 42 | I2C | Delt med display |
 | **Klippermotor** |
-| Relay Control | IN | Pin 11 | GPIO 38 | Digital Out | HIGH = ON |
+| Relay Control | IN | J3 | 12 | GPIO 38 | Digital Out | HIGH = ON |
 | **Batteri Monitor** |
-| Voltage Sense | ADC | Pin 2 | GPIO 1 | Analog In | Via voltage divider |
+| Voltage Sense | ADC | J2 | 18 | GPIO 1 | Analog In | Indbygget voltage divider |
 | **Display (OLED)** |
-| I2C Data | SDA | Pin 5 | GPIO 41 | I2C | Indbygget i Heltec |
-| I2C Clock | SCL | Pin 6 | GPIO 42 | I2C | Indbygget i Heltec |
-| Power Control | Vext | Pin 9 | GPIO 36 | Digital Out | LOW = ON (Heltec) |
+| I2C Data | SDA | J3 | 15 | GPIO 41 | I2C | Indbygget i Heltec |
+| I2C Clock | SCL | J3 | 16 | GPIO 42 | I2C | Indbygget i Heltec |
+| Power Control | Vext | J3 | 10 | GPIO 36 | Digital Out | LOW = ON (Heltec) |
 | **Status LED** |
-| Builtin LED | - | Pin 8 | GPIO 35 | Digital Out | Indbygget i Heltec |
+| Builtin LED | - | J3 | 9 | GPIO 35 | Digital Out | Indbygget i Heltec |
 
-**Note**: Pin numre refererer til fysisk pin location på Heltec WiFi Kit 32 V3 board
+**Note**: Header (J2/J3) og Pin# refererer til fysiske locations på Heltec WiFi Kit 32 V3 board jf. databladet
 
 ---
 
 ## 📍 Heltec WiFi Kit 32 V3 - Pin Layout
 
-```
-Heltec WiFi Kit 32 V3 Physical Pinout:
+**Jf. Heltec Official Datasheet Rev 1.1**
 
-Left Side (Top to Bottom):          Right Side (Top to Bottom):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━        ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Pin 1  - 3.3V                        Pin 40 - GPIO 48 (TRIG Midter)
-Pin 2  - GPIO 1  (Battery ADC)       Pin 39 - GPIO 47 (ECHO Venstre)
-Pin 3  - GND                         Pin 38 - 5V
-Pin 4  - GND                         Pin 37 - GND
-Pin 5  - GPIO 41 (SDA)               Pin 36 - GND
-Pin 6  - GPIO 42 (SCL)               Pin 35 - RST
-Pin 7  - GND                         Pin 34 - GND
-Pin 8  - GPIO 35 (ECHO Midter)       Pin 33 - NC
-Pin 9  - GPIO 36 (Vext/TRIG Højre)   Pin 32 - NC
-Pin 10 - GPIO 37 (ECHO Højre)        Pin 31 - NC
-Pin 11 - GPIO 38 (Relay)             Pin 30 - NC
-Pin 12 - GPIO 2  (L Motor R_IS)      Pin 29 - NC
-Pin 13 - GPIO 3  (L Motor L_IS)      Pin 28 - GPIO 21 (TRIG Venstre)
-Pin 14 - GPIO 5  (L Motor RPWM)      Pin 27 - GND
-Pin 15 - GPIO 4  (R Motor R_EN)      Pin 26 - GPIO 19 (L Motor LPWM)
-Pin 16 - GND                         Pin 25 - GPIO 18 (L Motor R_EN)
-Pin 17 - GPIO 6  (R Motor L_EN)      Pin 24 - GPIO 17 (L Motor L_EN)
-Pin 18 - GPIO 7  (R Motor R_IS)      Pin 23 - GPIO 16 (R Motor RPWM)
-Pin 19 - GPIO 8  (R Motor L_IS)      Pin 22 - GPIO 15 (R Motor LPWM)
-Pin 20 - 5V                          Pin 21 - GND
+```
+Heltec WiFi Kit 32 V3 har to separate headers:
+
+╔══════════════════════════════════════════════════════════════════╗
+║                    HELTEC WiFi Kit 32 V3                         ║
+║                     ESP32-S3 + OLED Display                      ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Header J2 (Venstre side):              Header J3 (Højre side):
+Pin 1  - GND                           Pin 1  - GND
+Pin 2  - 5V                            Pin 2  - 3V3
+Pin 3  - Ve (3.3V output)              Pin 3  - 3V3
+Pin 4  - Ve (3.3V output)              Pin 4  - GPIO 26
+Pin 5  - RX (GPIO 44) [USB]            Pin 5  - GPIO 48 (TRIG Midter)
+Pin 6  - TX (GPIO 43) [USB]            Pin 6  - GPIO 47 (ECHO Venstre)
+Pin 7  - RST (CHIP_PU)                 Pin 7  - GPIO 33
+Pin 8  - 0 (GPIO 0) [Boot]             Pin 8  - GPIO 34 (R Motor RPWM)
+Pin 9  - GPIO 21 (OLED RST/TRIG V)     Pin 9  - GPIO 35 (LED/ECHO Midter)
+Pin 10 - GPIO 20 (R Motor LPWM)        Pin 10 - GPIO 36 (Vext Ctrl)
+Pin 11 - GPIO 19 (L Motor LPWM)        Pin 11 - GPIO 37 (R Motor L_IS)
+Pin 12 - GPIO 7  (R Motor R_IS)        Pin 12 - GPIO 38 (Relay)
+Pin 13 - GPIO 6  (R Motor L_EN)        Pin 13 - GPIO 39 (R Sensor TRIG)
+Pin 14 - GPIO 5  (L Motor RPWM)        Pin 14 - GPIO 40 (R Sensor ECHO)
+Pin 15 - GPIO 4  (R Motor R_EN)        Pin 15 - GPIO 41 (SDA)
+Pin 16 - GPIO 3  (L Motor L_IS)        Pin 16 - GPIO 42 (SCL)
+Pin 17 - GPIO 2  (L Motor R_IS)        Pin 17 - GPIO 45
+Pin 18 - GPIO 1  (Battery ADC)         Pin 18 - GPIO 46
 ```
 
 **⚠️ VIGTIGT**:
-- Pin numre er fysiske positioner på boardet
+- Header J2 og J3 er fysiske connectorer på boardet
+- Pin numre er positioner på hver header (1-18)
 - GPIO numre er de logiske pin numre brugt i koden
-- Heltec V3 har nogle pins reserved til USB, Flash, osv.
-- OLED display og Vext er indbygget på GPIO 41, 42, 36
+- Nogle GPIO er reserved: GPIO 43/44 (USB), GPIO 0 (Boot)
+- OLED display bruger GPIO 41 (SDA), 42 (SCL) - indbygget
+- Vext control (GPIO 36) styrer power til eksterne sensorer - LOW = ON
+- Indbygget LED er på GPIO 35
+- GPIO 1 (Pin J2-18) læser batterispænding via indbygget voltage divider
 
 ---
 
@@ -93,15 +101,15 @@ Venstre Motor Driver:
 ────────────────────────────────────────────────────────────────
 ESP32-S3 Pin          BTS7960 Pin         Function
 ────────────────────────────────────────────────────────────────
-GPIO 5           →    RPWM                PWM til fremad kørsel
-GPIO 19          →    LPWM                PWM til baglæns kørsel
-GPIO 18          →    R_EN                Enable fremad side
-GPIO 17          →    L_EN                Enable baglæns side
-GPIO 2           →    R_IS                Strømsensor fremad (analog)
-GPIO 3           →    L_IS                Strømsensor baglæns (analog)
+GPIO 5  (J2-14)  →    RPWM                PWM til fremad kørsel
+GPIO 19 (J2-11)  →    LPWM                PWM til baglæns kørsel
+GPIO 26 (J3-4)   →    R_EN                Enable fremad side
+GPIO 33 (J3-7)   →    L_EN                Enable baglæns side
+GPIO 2  (J2-17)  →    R_IS                Strømsensor fremad (analog)
+GPIO 3  (J2-16)  →    L_IS                Strømsensor baglæns (analog)
 
-3.3V             →    VCC                 Logic power
-GND              →    GND                 Ground
+3.3V (J3-2/3)    →    VCC                 Logic power
+GND (J2-1/J3-1)  →    GND                 Ground
 
 18V+ (5S LiPo)   →    B+                  Motor power +
 18V- (5S LiPo)   →    B-                  Motor power -
@@ -111,15 +119,15 @@ Højre Motor Driver:
 ────────────────────────────────────────────────────────────────
 ESP32-S3 Pin          BTS7960 Pin         Function
 ────────────────────────────────────────────────────────────────
-GPIO 16          →    RPWM                PWM til fremad kørsel
-GPIO 15          →    LPWM                PWM til baglæns kørsel
-GPIO 4           →    R_EN                Enable fremad side
-GPIO 6           →    L_EN                Enable baglæns side
-GPIO 7           →    R_IS                Strømsensor fremad (analog)
-GPIO 8           →    L_IS                Strømsensor baglæns (analog)
+GPIO 34 (J3-8)   →    RPWM                PWM til fremad kørsel
+GPIO 20 (J2-10)  →    LPWM                PWM til baglæns kørsel
+GPIO 4  (J2-15)  →    R_EN                Enable fremad side
+GPIO 6  (J2-13)  →    L_EN                Enable baglæns side
+GPIO 7  (J2-12)  →    R_IS                Strømsensor fremad (analog)
+GPIO 37 (J3-11)  →    L_IS                Strømsensor baglæns (analog)
 
-3.3V             →    VCC                 Logic power
-GND              →    GND                 Ground
+3.3V (J3-2/3)    →    VCC                 Logic power
+GND (J2-1/J3-1)  →    GND                 Ground
 
 18V+ (5S LiPo)   →    B+                  Motor power +
 18V- (5S LiPo)   →    B-                  Motor power -
@@ -146,25 +154,25 @@ GND              →    GND                 Ground
 
 ```
 Venstre Sensor:
-────────────────────────
-VCC              →    5V              (eller 3.3V)
-TRIG             →    GPIO 21
-ECHO             →    GPIO 47
-GND              →    GND
+────────────────────────────────────
+VCC              →    5V (J2-2)
+TRIG             →    GPIO 21 (J2-9)
+ECHO             →    GPIO 47 (J3-6)
+GND              →    GND (J2-1/J3-1)
 
 Midter Sensor:
-────────────────────────
-VCC              →    5V
-TRIG             →    GPIO 48
-ECHO             →    GPIO 35
-GND              →    GND
+────────────────────────────────────
+VCC              →    5V (J2-2)
+TRIG             →    GPIO 48 (J3-5)
+ECHO             →    GPIO 35 (J3-9)
+GND              →    GND (J2-1/J3-1)
 
 Højre Sensor:
-────────────────────────
-VCC              →    5V
-TRIG             →    GPIO 36
-ECHO             →    GPIO 37
-GND              →    GND
+────────────────────────────────────
+VCC              →    5V (J2-2)
+TRIG             →    GPIO 39 (J3-13)
+ECHO             →    GPIO 40 (J3-14)
+GND              →    GND (J2-1/J3-1)
 ```
 
 **⚠️ VIGTIGT**:
@@ -177,14 +185,14 @@ GND              →    GND
 ### IMU (MPU-6050 / MPU-9250)
 
 ```
-MPU Pin         ESP32-S3 Pin       Function
-───────────────────────────────────────────────
-VCC         →   3.3V               Power (IKKE 5V!)
-GND         →   GND                Ground
-SCL         →   GPIO 42            I2C Clock
-SDA         →   GPIO 41            I2C Data
-AD0         →   GND                I2C Address (0x68)
-INT         →   (not connected)    Interrupt (optional)
+MPU Pin         ESP32-S3 Pin          Function
+─────────────────────────────────────────────────────
+VCC         →   3.3V (J3-2/3)        Power (IKKE 5V!)
+GND         →   GND (J2-1/J3-1)      Ground
+SCL         →   GPIO 42 (J3-16)      I2C Clock
+SDA         →   GPIO 41 (J3-15)      I2C Data
+AD0         →   GND                  I2C Address (0x68)
+INT         →   (not connected)      Interrupt (optional)
 ```
 
 **⚠️ ADVARSEL**: MPU-6050/9250 er **IKKE** 5V tolerant! Brug kun 3.3V!
@@ -199,13 +207,13 @@ INT         →   (not connected)    Interrupt (optional)
 
 ```
 Relay Module:
-────────────────────────────────
-VCC              →    5V
-GND              →    GND
-IN               →    GPIO 38
+────────────────────────────────────
+VCC              →    5V (J2-2)
+GND              →    GND (J2-1/J3-1)
+IN               →    GPIO 38 (J3-12)
 
 Relay Kontakter:
-────────────────────────────────
+────────────────────────────────────
 COM              →    Batteri + (12V)
 NO (Normally Open) → Klippermotor +
 Klippermotor -   →    Batteri - (GND)
@@ -217,34 +225,42 @@ Klippermotor -   →    Batteri - (GND)
 
 ---
 
-### Batteri Monitoring (Voltage Divider)
+### Batteri Monitoring (Indbygget Voltage Divider)
+
+**⚠️ VIGTIGT**: Heltec WiFi Kit 32 V3 har en **indbygget voltage divider** på GPIO 1!
 
 ```
-Batteri + (12.6V max)
+Batteri + (Via Heltec's indbygget circuit)
      │
-     ├─── [R1: 10kΩ] ───┬─── GPIO 1 (ADC)
+     ├─── [R1: 390Ω] ───┬─── GPIO 1 (J2-18, ADC1_CH0)
      │                  │
-                   [R2: 2.2kΩ]
+                   [R2: 100Ω]
                         │
                        GND
 ```
 
-**Beregning:**
+**Beregning (jf. Heltec datasheet):**
 ```
-Vout = Vin × R2 / (R1 + R2)
+Formel fra databladet:
+VBAT = (100 + 390) / 100 × VADC_IN
+VBAT = 490 / 100 × VADC
+VBAT = 4.9 × VADC
 
-Med 12.6V input:
-Vout = 12.6 × 2200 / (10000 + 2200)
-Vout = 12.6 × 0.1803 = 2.27V ✓ (under 3.3V max)
+Eksempler:
+Med 12.6V batteri → VADC = 12.6 / 4.9 = 2.57V (under 3.3V max ✓)
+Med 11.1V batteri → VADC = 11.1 / 4.9 = 2.27V
+Med 9.0V batteri  → VADC = 9.0 / 4.9 = 1.84V
 
-Med 11.1V input (nominal):
-Vout = 11.1 × 0.1803 = 2.00V
-
-Med 9.0V input (minimum):
-Vout = 9.0 × 0.1803 = 1.62V
+I koden:
+float adcVoltage = analogRead(BATTERY_ADC) * (3.3 / 4095.0);
+float batteryVoltage = adcVoltage * 4.9;
 ```
 
-**⚠️ KRITISK**: Verificér at Vout ALDRIG overstiger 3.3V!
+**⚠️ KRITISK**:
+- BRUG IKKE eksterne voltage dividere på GPIO 1!
+- Heltec har allerede indbygget en divider
+- Max batteri spænding: ~16V (giver 3.27V på ADC)
+- GPIO 1 er specifikt designet til batteri monitoring
 
 ---
 
@@ -253,18 +269,19 @@ Vout = 9.0 × 0.1803 = 1.62V
 Display er indbygget i Heltec WiFi Kit 32 V3:
 
 ```
-Display         ESP32-S3 (intern)
-────────────────────────────────
-SDA         →   GPIO 41          (hardware defineret)
-SCL         →   GPIO 42          (hardware defineret)
-Vext        →   GPIO 36          (power control - LOW = ON)
-RST         →   -                (ikke brugt)
+Display         ESP32-S3 Pin         Function
+───────────────────────────────────────────────────────
+SDA         →   GPIO 41 (J3-15)     I2C Data (hardware)
+SCL         →   GPIO 42 (J3-16)     I2C Clock (hardware)
+Vext        →   GPIO 36 (J3-10)     Power control - LOW = ON
+RST         →   GPIO 21 (J2-9)      OLED Reset (optional)
 ```
 
 **⚠️ VIGTIGT**:
-- På Heltec V3 skal Vext pin sættes LOW for at aktivere display power
+- På Heltec V3 skal Vext pin (GPIO 36) sættes LOW for at aktivere display power
 - Display deler I2C bus med IMU - begge devices skal have unikke adresser
 - Uden Vext aktivering vil displayet ikke få strøm!
+- GPIO 21 kan bruges som OLED reset hvis nødvendigt (men typisk ikke påkrævet)
 
 ---
 
@@ -355,37 +372,37 @@ For at ændre pins, rediger `config/Config.h`:
 ```cpp
 // Motor Pins (BTS7960)
 // Venstre motor driver
-#define MOTOR_LEFT_RPWM     5      // Pin 14 - PWM til fremad
-#define MOTOR_LEFT_LPWM     19     // Pin 26 - PWM til baglæns
-#define MOTOR_LEFT_R_EN     18     // Pin 25 - Enable fremad
-#define MOTOR_LEFT_L_EN     17     // Pin 24 - Enable baglæns
-#define MOTOR_LEFT_R_IS     2      // Pin 12 - Strømsensor fremad (ADC)
-#define MOTOR_LEFT_L_IS     3      // Pin 13 - Strømsensor baglæns (ADC)
+#define MOTOR_LEFT_RPWM     5      // J2-14 - PWM til fremad
+#define MOTOR_LEFT_LPWM     19     // J2-11 - PWM til baglæns
+#define MOTOR_LEFT_R_EN     26     // J3-4  - Enable fremad
+#define MOTOR_LEFT_L_EN     33     // J3-7  - Enable baglæns
+#define MOTOR_LEFT_R_IS     2      // J2-17 - Strømsensor fremad (ADC)
+#define MOTOR_LEFT_L_IS     3      // J2-16 - Strømsensor baglæns (ADC)
 
 // Højre motor driver
-#define MOTOR_RIGHT_RPWM    16     // Pin 23 - PWM til fremad
-#define MOTOR_RIGHT_LPWM    15     // Pin 22 - PWM til baglæns
-#define MOTOR_RIGHT_R_EN    4      // Pin 15 - Enable fremad
-#define MOTOR_RIGHT_L_EN    6      // Pin 17 - Enable baglæns
-#define MOTOR_RIGHT_R_IS    7      // Pin 18 - Strømsensor fremad (ADC)
-#define MOTOR_RIGHT_L_IS    8      // Pin 19 - Strømsensor baglæns (ADC)
+#define MOTOR_RIGHT_RPWM    34     // J3-8  - PWM til fremad
+#define MOTOR_RIGHT_LPWM    20     // J2-10 - PWM til baglæns
+#define MOTOR_RIGHT_R_EN    4      // J2-15 - Enable fremad
+#define MOTOR_RIGHT_L_EN    6      // J2-13 - Enable baglæns
+#define MOTOR_RIGHT_R_IS    7      // J2-12 - Strømsensor fremad (ADC)
+#define MOTOR_RIGHT_L_IS    37     // J3-11 - Strømsensor baglæns (ADC)
 
 // Sensorer
-#define SENSOR_LEFT_TRIG    21     // Pin 28
-#define SENSOR_LEFT_ECHO    47     // Pin 39
-#define SENSOR_MID_TRIG     48     // Pin 40
-#define SENSOR_MID_ECHO     35     // Pin 8
-#define SENSOR_RIGHT_TRIG   36     // Pin 9
-#define SENSOR_RIGHT_ECHO   37     // Pin 10
+#define SENSOR_LEFT_TRIG    21     // J2-9
+#define SENSOR_LEFT_ECHO    47     // J3-6
+#define SENSOR_MID_TRIG     48     // J3-5
+#define SENSOR_MID_ECHO     35     // J3-9
+#define SENSOR_RIGHT_TRIG   39     // J3-13
+#define SENSOR_RIGHT_ECHO   40     // J3-14
 
-// Display og IMU
-#define DISPLAY_SDA         41     // Pin 5 (delt med IMU)
-#define DISPLAY_SCL         42     // Pin 6 (delt med IMU)
-#define DISPLAY_VEXT        36     // Pin 9 - Vext On (LOW = power on)
+// Display og IMU (Indbygget i Heltec V3)
+#define DISPLAY_SDA         41     // J3-15 (delt med IMU)
+#define DISPLAY_SCL         42     // J3-16 (delt med IMU)
+#define DISPLAY_VEXT        36     // J3-10 - Vext On (LOW = power on)
 
 // Relay og Batteri
-#define RELAY_PIN           38     // Pin 11 - Klippermotor
-#define BATTERY_ADC         1      // Pin 2 - Battery voltage sense
+#define RELAY_PIN           38     // J3-12 - Klippermotor
+#define BATTERY_ADC         1      // J2-18 - Battery voltage sense (indbygget divider)
 ```
 
 Efter ændring, opdater dine fysiske forbindelser tilsvarende!
