@@ -5,14 +5,14 @@ Komplet hardware liste for Robot Plæneklipper projektet.
 ## 📦 Hovedkomponenter
 
 ### 1. Microcontroller
-- **Heltec WiFi Kit 32 V3**
-  - ESP32-S3 chip
+- **ESP32-WROOM-32U Development Board (38-Pin)**
+  - ESP32 chip (original, ikke S3)
   - WiFi + Bluetooth
-  - Indbygget OLED display (128x64)
-  - 8MB Flash
-  - USB-C forbindelse
-  - [Køb her](https://heltec.org/project/wifi-kit-32-v3/)
-  - Pris: ~$15-20
+  - Ingen indbygget display
+  - 4MB Flash (standard)
+  - USB til Serial (CP2102 eller CH340)
+  - Standard 38-pin breadboard-friendly layout
+  - Pris: ~$5-10 (meget billigere end Heltec)
 
 ### 2. Motor Driver
 - **2x Double BTS7960 43A H-Bridge Motor Driver**
@@ -101,8 +101,9 @@ ELLER
 ## 🔌 Elektronik Komponenter
 
 ### Modstande
-- 10kΩ - 2x (voltage divider)
-- 2.2kΩ - 1x (voltage divider)
+- **10kΩ** - 1x (voltage divider til batteri, R1)
+- **2.2kΩ** - 1x (voltage divider til batteri, R2)
+- **220Ω** - 1x (LED strømbegrænsning, optional)
 
 ### Kondensatorer (anbefalet for støj reduktion)
 - 100µF electrolytic - 2x
@@ -164,7 +165,7 @@ ELLER
 
 | Kategori | Pris (USD) |
 |----------|------------|
-| Microcontroller | $15-20 |
+| Microcontroller | $5-10 |
 | Motor Drivers (2x BTS7960) | $20-30 |
 | Motors (2x) | $20-30 |
 | Sensorer (3x) | $6 |
@@ -176,7 +177,7 @@ ELLER
 | Regulator | $5 |
 | Elektronik dele | $20 |
 | Mekanik | $30-50 |
-| **TOTAL** | **~$215-335** |
+| **TOTAL** | **~$205-325** |
 
 *Priser er ca. og varierer efter leverandør og region*
 
@@ -194,6 +195,16 @@ ELLER
 - **Elfa Distrelec**
 - **Conrad Electronic**
 - **Farnell**
+
+## 🖥️ Display (Optional)
+
+Da ESP32-WROOM-32U ikke har indbygget display, kan du tilføje et eksternt display hvis ønsket:
+
+- **0.96" OLED Display (128x64)**
+  - I2C interface (SSD1306)
+  - Deler I2C bus med IMU
+  - Pris: ~$3-5
+  - Note: Kræver software ændringer for at aktivere
 
 ## 🔍 Valgfrie Opgraderinger
 

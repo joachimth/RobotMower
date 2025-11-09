@@ -43,7 +43,8 @@
 #include "src/hardware/Motors.h"
 #include "src/hardware/Sensors.h"
 #include "src/hardware/IMU.h"
-#include "src/hardware/Display.h"
+// Display deaktiveret for ESP32-WROOM-32U (ingen indbygget display)
+// #include "src/hardware/Display.h"
 #include "src/hardware/CuttingMechanism.h"
 #include "src/hardware/Battery.h"
 
@@ -72,7 +73,8 @@ StateManager stateManager;
 Motors motors;
 Sensors sensors;
 IMU imu;
-Display display;
+// Display deaktiveret for ESP32-WROOM-32U (ENABLE_DISPLAY = false)
+// Display display;
 CuttingMechanism cuttingMech;
 Battery battery;
 
@@ -128,7 +130,7 @@ void setup() {
 
     Serial.println("\n\n");
     Serial.println("============================================");
-    Serial.println("   ROBOT PLÆNEKLIPPER - ESP32-S3");
+    Serial.println("   ROBOT PLÆNEKLIPPER - ESP32-WROOM-32U");
     Serial.println("============================================");
 
     // Initialize Logger
@@ -150,11 +152,11 @@ void setup() {
     // Initialize Web Server
     initializeWeb();
 
-    // Display startup complete
-    #if ENABLE_DISPLAY
-    display.showSplash();
-    delay(2000);
-    #endif
+    // Display startup complete (deaktiveret - ingen display på ESP32-WROOM-32U)
+    // #if ENABLE_DISPLAY
+    // display.showSplash();
+    // delay(2000);
+    // #endif
 
     Logger::info("System initialization complete!");
     Logger::info("Ready to mow!");
@@ -245,13 +247,13 @@ void initializeHardware() {
     }
     #endif
 
-    // Display
-    #if ENABLE_DISPLAY
-    if (!display.begin()) {
-        Logger::warning("Failed to initialize Display - continuing without");
-        // Not critical, continue
-    }
-    #endif
+    // Display (deaktiveret for ESP32-WROOM-32U)
+    // #if ENABLE_DISPLAY
+    // if (!display.begin()) {
+    //     Logger::warning("Failed to initialize Display - continuing without");
+    //     // Not critical, continue
+    // }
+    // #endif
 
     // Cutting Mechanism
     if (!cuttingMech.begin()) {
@@ -325,11 +327,11 @@ void initializeWeb() {
 
     Logger::info("Web server initialized successfully");
 
-    // Show WiFi info on display
-    #if ENABLE_DISPLAY
-    display.showWiFiInfo(WIFI_SSID, webServer.getIPAddress());
-    delay(3000);
-    #endif
+    // Show WiFi info on display (deaktiveret - ingen display)
+    // #if ENABLE_DISPLAY
+    // display.showWiFiInfo(WIFI_SSID, webServer.getIPAddress());
+    // delay(3000);
+    // #endif
 }
 
 // ============================================================================
@@ -381,9 +383,10 @@ void handleCalibratingState() {
 
     if (!calibrationStarted) {
         Logger::info("Starting IMU calibration - keep robot still!");
-        #if ENABLE_DISPLAY
-        display.showCalibration(0);
-        #endif
+        // Display deaktiveret
+        // #if ENABLE_DISPLAY
+        // display.showCalibration(0);
+        // #endif
 
         imu.calibrate();
         calibrationStarted = true;
@@ -508,10 +511,13 @@ void handleErrorState() {
     motors.emergencyStop();
     cuttingMech.emergencyStop();
 
-    // Vis fejl på display
-    #if ENABLE_DISPLAY
-    display.showError(stateManager.getErrorMessage());
-    #endif
+    // Vis fejl på display (deaktiveret - brug Serial Monitor i stedet)
+    // #if ENABLE_DISPLAY
+    // display.showError(stateManager.getErrorMessage());
+    // #endif
+
+    // Log fejl til Serial
+    Logger::error("ERROR STATE: " + stateManager.getErrorMessage());
 
     // Kræver manuel genstart
 }
@@ -548,16 +554,17 @@ void updateIMU() {
 }
 
 void updateDisplay() {
-    #if ENABLE_DISPLAY
-    display.update();
-
-    // Vis status
-    display.showStatus(
-        stateManager.getStateName(),
-        battery.getVoltage(),
-        imu.getHeading()
-    );
-    #endif
+    // Display deaktiveret for ESP32-WROOM-32U (ENABLE_DISPLAY = false)
+    // #if ENABLE_DISPLAY
+    // display.update();
+    //
+    // // Vis status
+    // display.showStatus(
+    //     stateManager.getStateName(),
+    //     battery.getVoltage(),
+    //     imu.getHeading()
+    // );
+    // #endif
 }
 
 void updateBattery() {
