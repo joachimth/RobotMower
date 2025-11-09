@@ -38,6 +38,8 @@
 // System
 #include "src/system/Logger.h"
 #include "src/system/StateManager.h"
+#include "src/system/WiFiManager.h"
+#include "src/system/UpdateManager.h"
 
 // Hardware
 #include "src/hardware/Motors.h"
@@ -68,6 +70,8 @@
 
 // System
 StateManager stateManager;
+WiFiManager wifiManager;
+UpdateManager updateManager;
 
 // Hardware
 Motors motors;
@@ -202,6 +206,11 @@ void loop() {
         currentUpdateTimer.reset();
     }
 
+    // Update WiFi Manager (reconnect handling)
+    #if ENABLE_WIFI_MANAGER
+    wifiManager.update();
+    #endif
+
     // Update state manager
     stateManager.update();
 
@@ -300,7 +309,30 @@ void initializeNavigation() {
 void initializeWeb() {
     Logger::info("Initializing web server...");
 
+    // WiFi Manager - Håndterer WiFi forbindelse med captive portal
+    #if ENABLE_WIFI_MANAGER
+    Logger::info("Initializing WiFi Manager...");
+    if (!wifiManager.begin()) {
+        Logger::warning("WiFi Manager failed - robot vil køre i AP mode");
+    }
+    #endif
+
+    // Update Manager - Håndterer auto-update fra GitHub
+    #if ENABLE_AUTO_UPDATE
+    Logger::info("Initializing Update Manager...");
+    if (!updateManager.begin()) {
+        Logger::warning("Update Manager failed");
+    }
+    #endif
+
     // Web Server
+    #if ENABLE_WIFI_MANAGER
+    webServer.setWiFiManager(&wifiManager);
+    #endif
+    #if ENABLE_AUTO_UPDATE
+    webServer.setUpdateManager(&updateManager);
+    #endif
+
     if (!webServer.begin()) {
         Logger::error("Failed to initialize Web Server");
         return;
@@ -331,11 +363,11 @@ void initializeWeb() {
 
     Logger::info("Web server initialized successfully");
 
-    // Show WiFi info on display (deaktiveret - ingen display)
-    // #if ENABLE_DISPLAY
-    // display.showWiFiInfo(WIFI_SSID, webServer.getIPAddress());
-    // delay(3000);
-    // #endif
+    // Log access info
+    String accessInfo = wifiManager.isAPMode() ?
+        "Captive Portal: Connect to '" + String(CAPTIVE_PORTAL_SSID) + "' and open http://" + wifiManager.getIPAddress() :
+        "Web Interface: http://robot-mower.local or http://" + wifiManager.getIPAddress();
+    Logger::info(accessInfo);
 }
 
 // ============================================================================
