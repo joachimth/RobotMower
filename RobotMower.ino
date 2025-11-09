@@ -106,6 +106,7 @@ void initializeNavigation();
 void initializeWeb();
 void runStateMachine();
 void handleIdleState();
+void handleManualState();
 void handleCalibratingState();
 void handleMowingState();
 void handleTurningState();
@@ -346,6 +347,10 @@ void runStateMachine() {
             handleIdleState();
             break;
 
+        case STATE_MANUAL:
+            handleManualState();
+            break;
+
         case STATE_CALIBRATING:
             handleCalibratingState();
             break;
@@ -375,6 +380,12 @@ void handleIdleState() {
     // Robot er idle - venter på kommando
     motors.stop();
     cuttingMech.stop();
+}
+
+void handleManualState() {
+    // Manuel kontrol - state machine gør ingenting
+    // Motorerne styres direkte via API kommandoer
+    // Ingen automatisk stop eller overskriv af kommandoer
 }
 
 void handleCalibratingState() {

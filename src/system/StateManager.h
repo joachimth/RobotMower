@@ -10,6 +10,7 @@
  */
 enum RobotState {
     STATE_IDLE,         // Inaktiv, venter på kommando
+    STATE_MANUAL,       // Manuel kontrol
     STATE_CALIBRATING,  // Kalibrerer sensorer
     STATE_MOWING,       // Klipper aktivt
     STATE_TURNING,      // Drejer
