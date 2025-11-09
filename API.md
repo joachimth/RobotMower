@@ -59,6 +59,7 @@ Returnerer nuværende robot status.
 
 **States:**
 - `IDLE` - Venter på kommando
+- `MANUAL` - Manuel kontrol aktiv
 - `CALIBRATING` - Kalibrerer sensorer
 - `MOWING` - Klipper aktivt
 - `TURNING` - Drejer
