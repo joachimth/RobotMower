@@ -175,6 +175,24 @@
 #define OTA_HASH_CHECK              true           // Verificer MD5 hash
 
 // ============================================================================
+// WIFI MANAGER KONSTANTER (Captive Portal)
+// ============================================================================
+
+#define CAPTIVE_PORTAL_SSID         "RobotMower-Setup"  // AP SSID ved første opstart
+#define CAPTIVE_PORTAL_PASSWORD     ""                   // Åben AP (ingen password)
+#define WIFI_MAX_RETRY              10                   // Max antal retry før fallback til AP
+#define WIFI_RETRY_INTERVAL         30000                // Retry interval (ms)
+
+// ============================================================================
+// AUTO UPDATE KONSTANTER
+// ============================================================================
+
+#define GITHUB_REPO_OWNER           "joachimth"          // GitHub repository ejer
+#define GITHUB_REPO_NAME            "RobotMower"         // GitHub repository navn
+#define CURRENT_FIRMWARE_VERSION    "1.0.0"              // Nuværende firmware version
+#define AUTO_UPDATE_CHECK_INTERVAL  86400000             // Check interval (24 timer)
+
+// ============================================================================
 // LOGGING KONSTANTER
 // ============================================================================
 
@@ -219,6 +237,8 @@
 #define ENABLE_WEBSOCKET            true   // Aktiver WebSocket
 #define ENABLE_MDNS                 true   // Aktiver mDNS
 #define ENABLE_OTA                  true   // Aktiver OTA updates (ArduinoOTA + Web Upload)
+#define ENABLE_WIFI_MANAGER         true   // Aktiver WiFi Manager med captive portal
+#define ENABLE_AUTO_UPDATE          true   // Aktiver auto-update feature
 
 // ============================================================================
 // RETNING KONSTANTER
