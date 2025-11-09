@@ -53,7 +53,7 @@ Se [PINOUT.md](PINOUT.md) for komplet pin diagram og forbindelser.
 - R_IS: GPIO34, L_IS: GPIO35
 
 **Højre Motor (BTS7960):**
-- RPWM: GPIO27, LPWM: GPIO14, R_EN: GPIO12, L_EN: GPIO13
+- RPWM: GPIO27, LPWM: GPIO14, R_EN: GPIO18, L_EN: GPIO13
 - R_IS: GPIO36, L_IS: GPIO39
 
 **Ultralyd Sensorer:**
@@ -67,7 +67,6 @@ Se [PINOUT.md](PINOUT.md) for komplet pin diagram og forbindelser.
 **Andet:**
 - Relay: GPIO23
 - Battery ADC: GPIO19 (med voltage divider)
-- LED (optional): GPIO18
 
 ## 🚀 Installation
 
