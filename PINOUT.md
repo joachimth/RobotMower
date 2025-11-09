@@ -16,7 +16,7 @@ Komplet pin mapping for Robot Plæneklipper projektet - **ESP32-WROOM-32U 38-Pin
 | **Højre Motor (BTS7960)** |
 | Forward PWM | RPWM | GPIO 27 | ADC2_CH7 | PWM | Fremad hastighed |
 | Reverse PWM | LPWM | GPIO 14 | ADC2_CH6 | PWM | Baglæns hastighed |
-| Forward Enable | R_EN | GPIO 12 | ADC2_CH5 | Digital Out | Enable fremad |
+| Forward Enable | R_EN | GPIO 18 | - | Digital Out | Enable fremad (flyttet fra GPIO 12) |
 | Reverse Enable | L_EN | GPIO 13 | ADC2_CH4 | Digital Out | Enable baglæns |
 | Forward Current | R_IS | GPIO 36 (VP) | ADC1_CH0 | Analog In | Strømsensor fremad (input-only) |
 | Reverse Current | L_IS | GPIO 39 (VN) | ADC1_CH3 | Analog In | Strømsensor baglæns (input-only) |
@@ -37,7 +37,7 @@ Komplet pin mapping for Robot Plæneklipper projektet - **ESP32-WROOM-32U 38-Pin
 | **Batteri Monitor** |
 | Voltage Sense | ADC | GPIO 19 | ADC2_CH8 | Analog In | Med voltage divider |
 | **Status LED (optional)** |
-| LED Output | LED | GPIO 18 | - | Digital Out | Ekstern LED hvis ønsket |
+| LED Output | LED | - | - | - | GPIO 18 bruges til motor enable |
 
 **Note**: Display er IKKE i brug i denne ESP32-WROOM-32U version
 
@@ -57,12 +57,12 @@ Pin 5  - GPIO39 (VN) ─────► L_IS    Pin 5  - GPIO1 (TX)
 Pin 6  - GPIO34 ───────────► R_IS   Pin 6  - GPIO3 (RX)
 Pin 7  - GPIO35 ───────────► L_IS   Pin 7  - GPIO21 ────► SDA (IMU)
 Pin 8  - GPIO32 ───────────► RPWM   Pin 8  - GPIO19 ────► Battery ADC
-Pin 9  - GPIO33 ───────────► LPWM   Pin 9  - GPIO18 ────► LED (optional)
+Pin 9  - GPIO33 ───────────► LPWM   Pin 9  - GPIO18 ────► R_EN (Højre motor)
 Pin 10 - GPIO25 ───────────► R_EN   Pin 10 - GPIO5 ─────► Echo Højre
 Pin 11 - GPIO26 ───────────► L_EN   Pin 11 - GPIO17 ────► Trig Højre
 Pin 12 - GPIO27 ───────────► RPWM   Pin 12 - GPIO16 ────► Echo Midter
 Pin 13 - GPIO14 ───────────► LPWM   Pin 13 - GPIO4 ─────► Trig Midter
-Pin 14 - GPIO12 ───────────► R_EN   Pin 14 - GPIO0 (Boot)
+Pin 14 - GPIO12 (ikke brugt) ──────  Pin 14 - GPIO0 (Boot)
 Pin 15 - GPIO13 ───────────► L_EN   Pin 15 - GPIO2 ─────► Echo Venstre
 Pin 16 - GPIO15 ───────────► TRIG   Pin 16 - (Flash)
 Pin 17 - GPIO10 (Flash)              Pin 17 - (Flash)
@@ -110,7 +110,7 @@ ESP32 Pin             BTS7960 Pin         Function
 ────────────────────────────────────────────────────────────────
 GPIO 27          →    RPWM                PWM til fremad kørsel
 GPIO 14          →    LPWM                PWM til baglæns kørsel
-GPIO 12          →    R_EN                Enable fremad side
+GPIO 18          →    R_EN                Enable fremad side (flyttet fra GPIO 12)
 GPIO 13          →    L_EN                Enable baglæns side
 GPIO 36 (VP,IN)  →    R_IS                Strømsensor fremad (analog)
 GPIO 39 (VN,IN)  →    L_IS                Strømsensor baglæns (analog)
@@ -323,7 +323,7 @@ LED- (kathode) → GND
 ### ⚠️ Strapping Pins (pas på!)
 - **GPIO 0**: Boot mode (hold HIGH eller floating ved normal drift)
 - **GPIO 2**: Boot mode (må ikke have pullup ved boot hvis flash er 3.3V)
-- **GPIO 12**: Flash voltage (normalt LOW ved boot)
+- **GPIO 12**: Flash voltage (IKKE BRUGT i dette projekt - undgås pga. strapping konflikter)
 - **GPIO 15**: Boot mode (hold HIGH ved boot)
 
 ### 📥 Input-Only Pins
@@ -368,8 +368,9 @@ Pins er designet til at gruppere hver komponent på tilstødende fysiske pins:
 - Alle 6 pins er placeret nær hinanden på boardet
 - Kort ledningsføring fra ESP32 til BTS7960
 
-**Højre Motor Gruppe** (GPIO 12-14, 27, 36, 39):
+**Højre Motor Gruppe** (GPIO 13-14, 18, 27, 36, 39):
 - Så tæt grupperet som muligt
+- GPIO 18 bruges i stedet for GPIO 12 (undgår strapping pin konflikt)
 - GPIO 36 og 39 er på modsatte side, men stadig ADC1 channels
 
 **Sensor Gruppe** (GPIO 2, 4, 5, 15-17):
@@ -399,7 +400,7 @@ For at ændre pins, rediger `src/config/Config.h`:
 // Højre motor driver
 #define MOTOR_RIGHT_RPWM    27     // PWM til fremad
 #define MOTOR_RIGHT_LPWM    14     // PWM til baglæns
-#define MOTOR_RIGHT_R_EN    12     // Enable fremad
+#define MOTOR_RIGHT_R_EN    18     // Enable fremad (flyttet fra GPIO 12)
 #define MOTOR_RIGHT_L_EN    13     // Enable baglæns
 #define MOTOR_RIGHT_R_IS    36     // Strømsensor fremad (ADC)
 #define MOTOR_RIGHT_L_IS    39     // Strømsensor baglæns (ADC)

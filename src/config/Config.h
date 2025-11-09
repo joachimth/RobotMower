@@ -22,10 +22,10 @@
 #define MOTOR_LEFT_R_IS     34     // Strømsensor højre side (ADC1_CH6, input-only)
 #define MOTOR_LEFT_L_IS     35     // Strømsensor venstre side (ADC1_CH7, input-only)
 
-// Højre motor driver - Grupperet på GPIO 12-14, 27, 36, 39
+// Højre motor driver - Grupperet på GPIO 13-14, 18, 27, 36, 39
 #define MOTOR_RIGHT_RPWM    27     // PWM til højre motor fremad
 #define MOTOR_RIGHT_LPWM    14     // PWM til højre motor baglæns
-#define MOTOR_RIGHT_R_EN    12     // Enable for højre side (fremad)
+#define MOTOR_RIGHT_R_EN    18     // Enable for højre side (fremad) - FLYTTET FRA GPIO 12
 #define MOTOR_RIGHT_L_EN    13     // Enable for venstre side (baglæns)
 #define MOTOR_RIGHT_R_IS    36     // Strømsensor højre side (ADC1_CH0, input-only, VP)
 #define MOTOR_RIGHT_L_IS    39     // Strømsensor venstre side (ADC1_CH3, input-only, VN)
@@ -56,7 +56,8 @@
 // #define DISPLAY_SCL         22     // Ville dele I2C med IMU
 
 // Status LED (kan tilsluttes eksternt hvis ønsket)
-#define LED_BUILTIN         18     // Kan bruges til status LED
+// #define LED_BUILTIN         18     // Nu brugt til MOTOR_RIGHT_R_EN
+// Hvis du vil have status LED, brug GPIO 0 eller en anden ledig pin
 
 // ============================================================================
 // SENSOR KONSTANTER
