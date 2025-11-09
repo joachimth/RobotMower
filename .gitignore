@@ -1,0 +1,46 @@
+# PlatformIO
+.pio/
+.vscode/
+.pioenvs/
+.piolibdeps/
+lib/readme.txt
+
+# Build artifacts
+*.bin
+*.elf
+*.hex
+*.map
+
+# Arduino IDE
+*.ino.cpp
+*.ino.eep
+*.ino.with_bootloader.bin
+
+# Credentials (VIGTIGT - må ikke committes!)
+src/config/Credentials.h
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Linux
+*~
+.directory
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
