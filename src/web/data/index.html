@@ -61,6 +61,31 @@
                 </div>
             </section>
 
+            <!-- Manual Control Panel -->
+            <section class="panel manual-control-panel">
+                <h2>Manuel Kontrol</h2>
+                <div class="manual-controls">
+                    <div class="direction-pad">
+                        <button id="btnForward" class="btn-direction btn-forward" title="Frem (Pil op)">▲</button>
+                        <div class="middle-row">
+                            <button id="btnLeft" class="btn-direction btn-left" title="Venstre (Pil venstre)">◄</button>
+                            <button id="btnManualStop" class="btn-direction btn-stop" title="Stop (Mellemrum)">■</button>
+                            <button id="btnRight" class="btn-direction btn-right" title="Højre (Pil højre)">►</button>
+                        </div>
+                        <button id="btnBackward" class="btn-direction btn-backward" title="Tilbage (Pil ned)">▼</button>
+                    </div>
+                    <div class="manual-speed-control">
+                        <label for="manualSpeed">Hastighed:</label>
+                        <input type="range" id="manualSpeed" min="100" max="255" value="200">
+                        <span id="manualSpeedValue">200</span>
+                    </div>
+                    <div class="cutting-control">
+                        <button id="btnCuttingStart" class="btn btn-success">Start Klippemotor</button>
+                        <button id="btnCuttingStop" class="btn btn-danger">Stop Klippemotor</button>
+                    </div>
+                </div>
+            </section>
+
             <!-- Sensor Visualization -->
             <section class="panel sensor-panel">
                 <h2>Sensorer</h2>
