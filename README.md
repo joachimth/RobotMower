@@ -5,6 +5,16 @@ Autonome plæneklipper bygget på ESP32-WROOM-32U med systematisk klipningsmøns
 ![Project Status](https://img.shields.io/badge/status-active-success)
 ![Version](https://img.shields.io/badge/version-1.0-blue)
 ![Platform](https://img.shields.io/badge/platform-ESP32--WROOM--32U-orange)
+[![Build Firmware](https://github.com/joachimth/RobotMower/actions/workflows/build-firmware.yml/badge.svg)](https://github.com/joachimth/RobotMower/actions/workflows/build-firmware.yml)
+[![GitHub release](https://img.shields.io/github/v/release/joachimth/RobotMower)](https://github.com/joachimth/RobotMower/releases/latest)
+
+## 📥 Download Firmware
+
+Vil du bare have den seneste firmware uden at kompilere den selv?
+
+**[⬇️ Download seneste firmware (.bin)](https://github.com/joachimth/RobotMower/releases/latest)**
+
+Upload den via web interface på `http://robot-mower.local/update` - ingen USB kabel nødvendig!
 
 ## ✨ Features
 
@@ -71,6 +81,14 @@ Se [PINOUT.md](PINOUT.md) for komplet pin diagram og forbindelser.
 
 ## 🚀 Installation
 
+### Hurtig Start (Anbefalet)
+
+**Vil du bare uploade firmware? 🎯**
+
+1. [Download seneste .bin fil](https://github.com/joachimth/RobotMower/releases/latest)
+2. Forbind ESP32 via USB og upload med [ESP Flash Tool](https://www.espressif.com/en/support/download/other-tools)
+3. Eller upload via web interface (kræver at firmware allerede kører)
+
 ### 1. Arduino IDE Setup
 
 1. Installer **Arduino IDE 2.x** fra [arduino.cc](https://www.arduino.cc/en/software)
@@ -78,6 +96,21 @@ Se [PINOUT.md](PINOUT.md) for komplet pin diagram og forbindelser.
    - Åbn Preferences → Additional Board Manager URLs
    - Tilføj: `https://espressif.github.io/arduino-esp32/package_esp32_index.json`
 3. Installer "esp32 by Espressif Systems" via Board Manager
+
+### 1b. PlatformIO Setup (Alternativ - Anbefalet for udvikling)
+
+1. Installer **Visual Studio Code** og **PlatformIO extension**
+2. Åbn projektet i VS Code
+3. PlatformIO downloader automatisk alt hvad der skal bruges
+4. Byg med: `pio run`
+5. Upload med: `pio run --target upload`
+
+**PlatformIO fordele:**
+- Automatisk dependency management
+- Hurtigere builds
+- Bedre error messages
+- Indbygget debugger
+- Nemmere CI/CD integration
 
 ### 2. Library Installation
 
@@ -336,6 +369,29 @@ Hvis du får "undefined reference" fejl under kompilering:
 
 ## 🛠️ Udvikling
 
+### Automatisk Build (GitHub Actions)
+
+Projektet har automatisk build setup via GitHub Actions! 🎉
+
+**Hvad sker der automatisk?**
+- ✅ Bygger firmware ved hver push til main/develop
+- ✅ Bygger ved pull requests
+- ✅ Opretter automatisk release ved version tags
+- ✅ Uploader .bin fil som artifact
+- ✅ Genererer release notes
+
+**Sådan laver du en release:**
+```bash
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+```
+
+GitHub bygger automatisk og opretter en release med .bin fil! 🚀
+
+**Se build status:**
+- [GitHub Actions](https://github.com/joachimth/RobotMower/actions)
+- [Latest Release](https://github.com/joachimth/RobotMower/releases/latest)
+
 ### OTA Udvikling Workflow
 
 Når du udvikler kan du uploade nye versioner trådløst:
@@ -345,8 +401,13 @@ Når du udvikler kan du uploade nye versioner trådløst:
    - Upload som normalt
    - Indtast OTA password
 
-2. **Via Web Interface**:
-   - Export .bin fil: Sketch → Export Compiled Binary
+2. **Via PlatformIO OTA**:
+   ```bash
+   pio run -e esp32dev-ota --target upload
+   ```
+
+3. **Via Web Interface**:
+   - Export .bin fil: Sketch → Export Compiled Binary (eller `pio run`)
    - Åbn http://robot-mower.local/update
    - Upload .bin fil
 
