@@ -25,6 +25,8 @@
 #include "../config/Config.h"
 #include "../config/Credentials.h"
 #include "../system/Logger.h"
+#include "../system/WiFiManager.h"
+#include "../system/UpdateManager.h"
 
 /**
  * WebServer klasse - Håndterer HTTP web server
@@ -92,6 +94,18 @@ public:
      */
     void handleOTA();
 
+    /**
+     * Sætter WiFiManager reference
+     * @param wifiMgr Pointer til WiFiManager
+     */
+    void setWiFiManager(WiFiManager* wifiMgr);
+
+    /**
+     * Sætter UpdateManager reference
+     * @param updateMgr Pointer til UpdateManager
+     */
+    void setUpdateManager(UpdateManager* updateMgr);
+
 private:
     /**
      * Forbinder til WiFi netværk
@@ -132,6 +146,10 @@ private:
 
     // State
     bool initialized;
+
+    // Manager references
+    WiFiManager* wifiManager;
+    UpdateManager* updateManager;
 };
 
 #endif // WEBSERVER_H

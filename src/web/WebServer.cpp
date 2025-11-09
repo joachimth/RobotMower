@@ -8,6 +8,8 @@ WebServer::WebServer() {
     ipAddress = "";
     lastWiFiCheck = 0;
     initialized = false;
+    wifiManager = nullptr;
+    updateManager = nullptr;
 }
 
 bool WebServer::begin() {
@@ -29,10 +31,27 @@ bool WebServer::begin() {
     }
 
     // Forbind til WiFi
+    #if ENABLE_WIFI_MANAGER
+    // Hvis WiFiManager er sat, brug den (den håndterer forbindelse selv)
+    if (wifiManager != nullptr) {
+        wifiConnected = wifiManager->isConnected();
+        apMode = wifiManager->isAPMode();
+        ipAddress = wifiManager->getIPAddress();
+        Logger::info("Using WiFiManager - AP Mode: " + String(apMode ? "YES" : "NO"));
+    } else {
+        Logger::warning("WiFiManager not set - using fallback");
+        if (!connectWiFi()) {
+            Logger::warning("WiFi connection failed - starting Access Point");
+            setupAccessPoint();
+        }
+    }
+    #else
+    // Gammel adfærd uden WiFiManager
     if (!connectWiFi()) {
         Logger::warning("WiFi connection failed - starting Access Point");
         setupAccessPoint();
     }
+    #endif
 
     // Opsæt mDNS
     #if ENABLE_MDNS
@@ -179,12 +198,163 @@ void WebServer::setupRoutes() {
     });
     #endif
 
+    // WiFi Manager routes
+    #if ENABLE_WIFI_MANAGER
+    // Captive portal page
+    server->on("/", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        // Hvis i AP mode, vis captive portal
+        if (wifiManager != nullptr && wifiManager->isAPMode()) {
+            request->send(200, "text/html", WiFiManager::getCaptivePortalHTML());
+        } else {
+            // Normal root handling
+            if (LittleFS.exists("/index.html")) {
+                request->send(LittleFS, "/index.html", "text/html");
+            } else {
+                String html = "<!DOCTYPE html><html><head><title>Robot Mower</title>";
+                html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
+                html += "</head><body>";
+                html += "<h1>Robot Mower Control</h1>";
+                html += "<p>Welcome! <a href='/api/status'>View Status</a></p>";
+                html += "</body></html>";
+                request->send(200, "text/html", html);
+            }
+        }
+    });
+
+    // WiFi scan endpoint
+    server->on("/wifi/scan", HTTP_GET, [](AsyncWebServerRequest *request) {
+        int n = WiFi.scanNetworks();
+        String json = "[";
+        for (int i = 0; i < n; i++) {
+            if (i > 0) json += ",";
+            json += "{";
+            json += "\"ssid\":\"" + WiFi.SSID(i) + "\",";
+            json += "\"rssi\":" + String(WiFi.RSSI(i)) + ",";
+            json += "\"encryption\":\"" + String((WiFi.encryptionType(i) == WIFI_AUTH_OPEN) ? "Open" : "Secured") + "\"";
+            json += "}";
+        }
+        json += "]";
+        request->send(200, "application/json", json);
+    });
+
+    // WiFi save credentials
+    server->on("/wifi/save", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        if (wifiManager == nullptr) {
+            request->send(500, "application/json", "{\"error\":\"WiFiManager not available\"}");
+            return;
+        }
+
+        String ssid = "";
+        String password = "";
+
+        if (request->hasParam("ssid", true)) {
+            ssid = request->getParam("ssid", true)->value();
+        }
+        if (request->hasParam("password", true)) {
+            password = request->getParam("password", true)->value();
+        }
+
+        if (ssid.length() > 0) {
+            wifiManager->saveCredentials(ssid, password);
+            request->send(200, "application/json", "{\"status\":\"saved\"}");
+
+            // Stop captive portal og reconnect
+            Logger::info("Credentials saved, reconnecting...");
+            delay(1000);
+            ESP.restart();
+        } else {
+            request->send(400, "application/json", "{\"error\":\"Missing SSID\"}");
+        }
+    });
+
+    // WiFi reset (force AP mode)
+    server->on("/wifi/reset", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        if (wifiManager != nullptr) {
+            wifiManager->clearCredentials();
+            request->send(200, "application/json", "{\"status\":\"cleared\"}");
+            delay(1000);
+            ESP.restart();
+        } else {
+            request->send(500, "application/json", "{\"error\":\"WiFiManager not available\"}");
+        }
+    });
+    #endif
+
+    // Auto-update routes
+    #if ENABLE_AUTO_UPDATE
+    // Check for updates
+    server->on("/api/update/check", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        if (updateManager == nullptr) {
+            request->send(500, "application/json", "{\"error\":\"UpdateManager not available\"}");
+            return;
+        }
+
+        bool updateAvailable = updateManager->checkForUpdate();
+
+        String json = "{";
+        json += "\"updateAvailable\":" + String(updateAvailable ? "true" : "false") + ",";
+        json += "\"currentVersion\":\"" + updateManager->getCurrentVersion() + "\",";
+        json += "\"latestVersion\":\"" + updateManager->getLatestVersion() + "\",";
+        json += "\"status\":\"" + String(updateManager->getStatus()) + "\"";
+        json += "}";
+
+        request->send(200, "application/json", json);
+    });
+
+    // Perform update
+    server->on("/api/update/install", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        if (updateManager == nullptr) {
+            request->send(500, "application/json", "{\"error\":\"UpdateManager not available\"}");
+            return;
+        }
+
+        request->send(200, "application/json", "{\"status\":\"updating\"}");
+
+        // Start update i baggrunden
+        delay(500);
+        updateManager->performUpdate();
+        // Hvis vi kommer hertil, fejlede update
+        // (normalt genstarter ESP efter succesfuld update)
+    });
+
+    // Get update status
+    server->on("/api/update/status", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        if (updateManager == nullptr) {
+            request->send(500, "application/json", "{\"error\":\"UpdateManager not available\"}");
+            return;
+        }
+
+        String json = "{";
+        json += "\"status\":" + String(updateManager->getStatus()) + ",";
+        json += "\"progress\":" + String(updateManager->getProgress()) + ",";
+        json += "\"error\":\"" + updateManager->getError() + "\"";
+        json += "}";
+
+        request->send(200, "application/json", json);
+    });
+
+    // Get version info
+    server->on("/api/update/version", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        if (updateManager == nullptr) {
+            request->send(500, "application/json", "{\"error\":\"UpdateManager not available\"}");
+            return;
+        }
+
+        String json = "{";
+        json += "\"current\":\"" + updateManager->getCurrentVersion() + "\",";
+        json += "\"latest\":\"" + updateManager->getLatestVersion() + "\"";
+        json += "}";
+
+        request->send(200, "application/json", json);
+    });
+    #endif
+
     // Not found handler
     server->onNotFound([this](AsyncWebServerRequest *request) {
         handleNotFound(request);
     });
 
-    Logger::info("Web routes configured (with LittleFS and OTA support)");
+    Logger::info("Web routes configured (with WiFiManager and UpdateManager support)");
 }
 
 bool WebServer::isClientConnected() {
@@ -312,4 +482,14 @@ void WebServer::setupOTA() {
 
 void WebServer::handleOTA() {
     ArduinoOTA.handle();
+}
+
+void WebServer::setWiFiManager(WiFiManager* wifiMgr) {
+    wifiManager = wifiMgr;
+    Logger::info("WiFiManager reference set");
+}
+
+void WebServer::setUpdateManager(UpdateManager* updateMgr) {
+    updateManager = updateMgr;
+    Logger::info("UpdateManager reference set");
 }

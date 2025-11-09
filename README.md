@@ -21,9 +21,11 @@ Upload den via web interface på `http://robot-mower.local/update` - ingen USB k
 - **Systematisk Klipning**: Parallelt række-mønster for effektiv plæneklipning
 - **Forhindring Undgåelse**: 3x ultralyd sensorer til obstacle detection
 - **IMU Navigation**: MPU-6050/9250 til præcis retningsbestemmelse
+- **WiFi Manager**: Captive portal til nem WiFi setup - credentials gemmes i flash! 🆕
+- **Auto-Update**: Tjek og installer firmware updates direkte fra GitHub! 🆕
 - **Web Interface**: Komplet responsive web interface med manuel kontrol
 - **WebSocket Telemetri**: Live sensor data og status updates
-- **OTA Updates**: Trådløs firmware opdatering (ArduinoOTA + Web Upload)
+- **OTA Updates**: Trådløs firmware opdatering (ArduinoOTA + Web Upload + GitHub)
 - **Strømovervågning**: Real-time strømmåling fra BTS7960 current sense
 - **Manuel Kontrol**: Direkte motor kontrol via web interface
 - **Batteri Overvågning**: Automatisk low-battery håndtering
@@ -144,6 +146,19 @@ Download ZIP fra GitHub → Arduino IDE → Sketch → Include Library → Add .
 
 ### 3. Konfiguration
 
+**WiFi Setup - To muligheder:**
+
+**Option 1: Captive Portal (Anbefalet - Nemt!)**
+- Ingen konfiguration nødvendig!
+- Power ON robotten første gang
+- Den starter "RobotMower-Setup" hotspot
+- Forbind med din phone/computer
+- WiFi setup page åbner automatisk
+- Vælg dit WiFi og indtast password
+- Credentials gemmes permanent i ESP32 flash
+- Overlever firmware updates! ✨
+
+**Option 2: Hardcoded (Klassisk metode)**
 1. Kopiér `src/config/Credentials.h.example` til `src/config/Credentials.h`
 2. Indtast dit WiFi SSID og password:
 
@@ -153,6 +168,11 @@ Download ZIP fra GitHub → Arduino IDE → Sketch → Include Library → Add .
 ```
 
 3. Juster konstanter i `src/config/Config.h` efter behov
+
+**⚠️ Retry Logic:**
+- Robotten prøver automatisk at forbinde 10 gange
+- Efter 10 fejlede forsøg: Automatisk fallback til "RobotMower-Setup" hotspot
+- Perfekt til recovery hvis WiFi skifter!
 
 ### 4. Upload
 
@@ -189,6 +209,35 @@ Opdater firmware trådløst - ingen USB kabel nødvendig! 🚀
 ⚠️ **Sikkerhed**: Ændr `OTA_PASSWORD` i `src/config/Config.h` før første brug!
 
 Se [API.md](API.md) for detaljeret OTA dokumentation.
+
+### Auto-Update fra GitHub
+
+Robotten kan automatisk tjekke og installere nye firmware versioner! 🚀
+
+**Via Web Interface:**
+1. Åbn `http://robot-mower.local`
+2. Klik "Check for Updates"
+3. Hvis ny version tilgængelig: Klik "Install Update"
+4. Robotten downloader fra GitHub releases
+5. Automatisk installation og genstart
+
+**Via API:**
+```bash
+# Check for updates
+curl http://robot-mower.local/api/update/check
+
+# Install update
+curl -X POST http://robot-mower.local/api/update/install
+```
+
+**Features:**
+- ✅ Automatisk version sammenligning (semantic versioning)
+- ✅ Download direkte fra GitHub releases
+- ✅ Progress tracking
+- ✅ Automatisk genstart
+- ✅ Sikker rollback hvis update fejler
+
+Se [API.md](API.md) for alle auto-update endpoints.
 
 ### API Endpoints
 

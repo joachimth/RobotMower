@@ -362,9 +362,121 @@ Henter real-time strømdata fra BTS7960 motor drivers.
 
 ---
 
+## WiFi Manager Endpoints
+
+### GET /wifi/scan
+
+Scanner tilgængelige WiFi netværk.
+
+**Response:**
+```json
+[
+  {
+    "ssid": "MyWiFi",
+    "rssi": -45,
+    "encryption": "Secured"
+  }
+]
+```
+
+---
+
+### POST /wifi/save
+
+Gemmer WiFi credentials (persistent i NVS flash).
+
+**Form Data:**
+- `ssid` - WiFi SSID
+- `password` - WiFi password
+
+**Response:**
+```json
+{
+  "status": "saved"
+}
+```
+
+**Note:** Robot genstarter og forbinder til WiFi.
+
+---
+
+### POST /wifi/reset
+
+Nulstiller WiFi og starter captive portal.
+
+**Response:**
+```json
+{
+  "status": "cleared"
+}
+```
+
+---
+
+## Auto-Update Endpoints
+
+### GET /api/update/check
+
+Tjekker for ny firmware på GitHub.
+
+**Response:**
+```json
+{
+  "updateAvailable": true,
+  "currentVersion": "1.0.0",
+  "latestVersion": "1.0.1"
+}
+```
+
+---
+
+### POST /api/update/install
+
+Installer update fra GitHub.
+
+**Response:**
+```json
+{
+  "status": "updating"
+}
+```
+
+**Note:** Robot downloader og installerer automatisk, derefter genstart.
+
+---
+
+### GET /api/update/status
+
+Update progress.
+
+**Response:**
+```json
+{
+  "status": 4,
+  "progress": 67,
+  "error": ""
+}
+```
+
+---
+
+### GET /api/update/version
+
+Version info.
+
+**Response:**
+```json
+{
+  "current": "1.0.0",
+  "latest": "1.0.1"
+}
+```
+
+---
+
 ### GET /update
 
-Viser OTA firmware update interface.
+Viser OTA firmware update interface (manuel upload).
 
 **Browser Interface:**
 Åbn `http://robot-mower.local/update` i en browser for at uploade ny firmware.
