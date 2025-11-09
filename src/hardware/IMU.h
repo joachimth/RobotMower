@@ -99,6 +99,17 @@ private:
     void calculateOrientation();
 
     /**
+     * Opdaterer gyro bias estimation når robotten er stille
+     */
+    void updateGyroBias();
+
+    /**
+     * Tjek om robotten er stillestående
+     * @return true hvis stillestående
+     */
+    bool isStationary();
+
+    /**
      * Normaliserer vinkel til 0-360 grader
      * @param angle Vinkel at normalisere
      * @return Normaliseret vinkel
@@ -136,6 +147,12 @@ private:
     float gyroXOffset;
     float gyroYOffset;
     float gyroZOffset;
+
+    // Drift kompensation
+    float gyroBiasZ;              // Estimeret bias for Z gyro
+    unsigned long stationaryTime; // Tid robot har været stille
+    const float GYRO_STATIONARY_THRESHOLD = 2.0; // grader/sek
+    const unsigned long BIAS_UPDATE_TIME = 3000; // 3 sekunder stille før bias update
 
     // Timing
     unsigned long lastUpdate;

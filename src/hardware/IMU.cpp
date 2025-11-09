@@ -5,6 +5,8 @@ IMU::IMU() {
     gyroX = gyroY = gyroZ = 0;
     heading = yaw = pitch = roll = 0.0;
     gyroXOffset = gyroYOffset = gyroZOffset = 0.0;
+    gyroBiasZ = 0.0;
+    stationaryTime = 0;
     lastUpdate = 0;
     deltaTime = 0.0;
     initialized = false;
@@ -120,6 +122,9 @@ void IMU::update() {
     readAccelerometer();
     readGyroscope();
 
+    // Opdater drift kompensation
+    updateGyroBias();
+
     // Beregn orientering
     calculateOrientation();
 }
@@ -199,13 +204,17 @@ void IMU::calculateOrientation() {
     // og anvend kalibrerings offsets
     float gyroXrate = ((gyroX - gyroXOffset) / 131.0) * deltaTime;
     float gyroYrate = ((gyroY - gyroYOffset) / 131.0) * deltaTime;
-    float gyroZrate = ((gyroZ - gyroZOffset) / 131.0) * deltaTime;
+
+    // Anvend både offset OG bias kompensation for Z gyro
+    float gyroZrateRaw = (gyroZ - gyroZOffset) / 131.0; // grader/sek
+    float gyroZrate = (gyroZrateRaw - gyroBiasZ) * deltaTime; // Anvend bias korrektion
 
     // Komplementær filter for pitch og roll (gyro + accel)
     pitch = complementaryFilter(pitch + gyroYrate, accelPitch, 0.98);
     roll = complementaryFilter(roll + gyroXrate, accelRoll, 0.98);
 
     // Yaw/Heading fra gyroscope Z-akse (kun gyro, ingen magnetometer i brug)
+    // Nu med drift kompensation
     yaw += gyroZrate;
     yaw = normalizeAngle(yaw);
 
@@ -228,4 +237,45 @@ float IMU::complementaryFilter(float gyroValue, float accelValue, float alpha) {
     // alpha tæt på 1 = stoler mere på gyro (mindre noise, men drifter)
     // alpha tæt på 0 = stoler mere på accel (mere noise, men drifter ikke)
     return alpha * gyroValue + (1.0 - alpha) * accelValue;
+}
+
+bool IMU::isStationary() {
+    // Tjek om gyro værdier er små (næsten ingen rotation)
+    float gyroZrate = abs((gyroZ - gyroZOffset) / 131.0); // grader/sek
+
+    return (gyroZrate < GYRO_STATIONARY_THRESHOLD);
+}
+
+void IMU::updateGyroBias() {
+    if (!calibrated) {
+        return;
+    }
+
+    unsigned long currentTime = millis();
+
+    if (isStationary()) {
+        // Robot er stille - akkumuler tid
+        if (stationaryTime == 0) {
+            stationaryTime = currentTime;
+        }
+
+        // Hvis robotten har været stille i tilstrækkelig lang tid
+        if ((currentTime - stationaryTime) > BIAS_UPDATE_TIME) {
+            // Opdater bias estimat med exponential moving average
+            // Dette antager at gennemsnitlig rotation over tid skal være 0
+            float rawGyroZ = (gyroZ - gyroZOffset) / 131.0; // grader/sek
+
+            // Langsom opdatering af bias (alpha = 0.01 betyder 1% ny, 99% gammel)
+            gyroBiasZ = 0.99 * gyroBiasZ + 0.01 * rawGyroZ;
+
+            #if DEBUG_IMU
+            if (abs(gyroBiasZ) > 0.1) {
+                Serial.printf("[IMU] Gyro bias Z updated: %.3f deg/s\n", gyroBiasZ);
+            }
+            #endif
+        }
+    } else {
+        // Robot bevæger sig - nulstil stationary timer
+        stationaryTime = 0;
+    }
 }
