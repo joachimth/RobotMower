@@ -75,6 +75,7 @@ String StateManager::getStateName() {
 String StateManager::getStateName(RobotState state) {
     switch (state) {
         case STATE_IDLE:        return "IDLE";
+        case STATE_MANUAL:      return "MANUAL";
         case STATE_CALIBRATING: return "CALIBRATING";
         case STATE_MOWING:      return "MOWING";
         case STATE_TURNING:     return "TURNING";
@@ -151,6 +152,10 @@ void StateManager::onStateEnter(RobotState oldState, RobotState newState) {
             // Robot går i idle - stop alle aktioner
             break;
 
+        case STATE_MANUAL:
+            Logger::info("Entering manual control mode");
+            break;
+
         case STATE_CALIBRATING:
             Logger::info("Starting calibration...");
             break;
@@ -210,6 +215,7 @@ void StateManager::checkStateTimeout() {
     }
 
     if (currentState != STATE_IDLE &&
+        currentState != STATE_MANUAL &&
         currentState != STATE_CHARGING &&
         currentState != STATE_ERROR) {
 

@@ -295,6 +295,11 @@ void WebAPI::handleManualForward(AsyncWebServerRequest *request) {
         return;
     }
 
+    // Skift til manuel kontrol tilstand
+    if (stateManagerPtr != nullptr) {
+        stateManagerPtr->setState(STATE_MANUAL);
+    }
+
     int speed = MOTOR_CRUISE_SPEED;
     if (request->hasParam("speed", true)) {
         speed = request->getParam("speed", true)->value().toInt();
@@ -309,6 +314,11 @@ void WebAPI::handleManualBackward(AsyncWebServerRequest *request) {
     if (motorsPtr == nullptr) {
         request->send(500, "application/json", "{\"error\":\"Motors not initialized\"}");
         return;
+    }
+
+    // Skift til manuel kontrol tilstand
+    if (stateManagerPtr != nullptr) {
+        stateManagerPtr->setState(STATE_MANUAL);
     }
 
     int speed = MOTOR_CRUISE_SPEED;
@@ -327,6 +337,11 @@ void WebAPI::handleManualLeft(AsyncWebServerRequest *request) {
         return;
     }
 
+    // Skift til manuel kontrol tilstand
+    if (stateManagerPtr != nullptr) {
+        stateManagerPtr->setState(STATE_MANUAL);
+    }
+
     int speed = MOTOR_TURN_SPEED;
     if (request->hasParam("speed", true)) {
         speed = request->getParam("speed", true)->value().toInt();
@@ -341,6 +356,11 @@ void WebAPI::handleManualRight(AsyncWebServerRequest *request) {
     if (motorsPtr == nullptr) {
         request->send(500, "application/json", "{\"error\":\"Motors not initialized\"}");
         return;
+    }
+
+    // Skift til manuel kontrol tilstand
+    if (stateManagerPtr != nullptr) {
+        stateManagerPtr->setState(STATE_MANUAL);
     }
 
     int speed = MOTOR_TURN_SPEED;
@@ -360,6 +380,13 @@ void WebAPI::handleManualStop(AsyncWebServerRequest *request) {
     }
 
     motorsPtr->stop();
+
+    // Bliv i manuel tilstand - lad brugeren bestemme når de vil forlade manuel mode
+    // De kan bruge "Stop" knappen i hovedkontrollen for at gå tilbage til IDLE
+    if (stateManagerPtr != nullptr && stateManagerPtr->getState() != STATE_MANUAL) {
+        stateManagerPtr->setState(STATE_MANUAL);
+    }
+
     request->send(200, "application/json", "{\"status\":\"stopped\"}");
     Logger::info("API: Manual stop");
 }
@@ -373,6 +400,11 @@ void WebAPI::handleManualSetSpeed(AsyncWebServerRequest *request) {
     if (!request->hasParam("left", true) || !request->hasParam("right", true)) {
         request->send(400, "application/json", "{\"error\":\"Missing left or right speed parameter\"}");
         return;
+    }
+
+    // Skift til manuel kontrol tilstand
+    if (stateManagerPtr != nullptr) {
+        stateManagerPtr->setState(STATE_MANUAL);
     }
 
     int leftSpeed = request->getParam("left", true)->value().toInt();
