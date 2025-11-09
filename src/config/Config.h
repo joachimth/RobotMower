@@ -166,6 +166,15 @@
 #define WEBSOCKET_PING_INTERVAL     30000  // WebSocket ping interval (ms)
 
 // ============================================================================
+// OTA UPDATE KONSTANTER
+// ============================================================================
+
+#define OTA_HOSTNAME                "robot-mower"  // OTA hostname
+#define OTA_PASSWORD                "robot2024"    // OTA password (ÆNDR DETTE!)
+#define OTA_PORT                    3232           // OTA port (default: 3232)
+#define OTA_HASH_CHECK              true           // Verificer MD5 hash
+
+// ============================================================================
 // LOGGING KONSTANTER
 // ============================================================================
 
@@ -209,7 +218,7 @@
 #define ENABLE_IMU                  true   // Aktiver IMU
 #define ENABLE_WEBSOCKET            true   // Aktiver WebSocket
 #define ENABLE_MDNS                 true   // Aktiver mDNS
-#define ENABLE_OTA                  false  // Aktiver OTA updates (fremtidig feature)
+#define ENABLE_OTA                  true   // Aktiver OTA updates (ArduinoOTA + Web Upload)
 
 // ============================================================================
 // RETNING KONSTANTER
