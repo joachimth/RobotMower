@@ -43,6 +43,22 @@ function initializeEventListeners() {
     document.getElementById('btnPause').addEventListener('click', handlePause);
     document.getElementById('btnCalibrate').addEventListener('click', handleCalibrate);
 
+    // Manual control buttons
+    document.getElementById('btnForward').addEventListener('click', handleManualForward);
+    document.getElementById('btnBackward').addEventListener('click', handleManualBackward);
+    document.getElementById('btnLeft').addEventListener('click', handleManualLeft);
+    document.getElementById('btnRight').addEventListener('click', handleManualRight);
+    document.getElementById('btnManualStop').addEventListener('click', handleManualStop);
+
+    // Manual speed control
+    document.getElementById('manualSpeed').addEventListener('input', function(e) {
+        document.getElementById('manualSpeedValue').textContent = e.target.value;
+    });
+
+    // Cutting motor control
+    document.getElementById('btnCuttingStart').addEventListener('click', handleCuttingStart);
+    document.getElementById('btnCuttingStop').addEventListener('click', handleCuttingStop);
+
     // Logs controls
     document.getElementById('btnClearLogs').addEventListener('click', clearLogs);
     document.getElementById('chkAutoScroll').addEventListener('change', function(e) {
@@ -54,6 +70,9 @@ function initializeEventListeners() {
     document.getElementById('motorSpeed').addEventListener('input', function(e) {
         document.getElementById('motorSpeedValue').textContent = e.target.value;
     });
+
+    // Keyboard controls
+    document.addEventListener('keydown', handleKeyboardControl);
 }
 
 // Initialize WebSocket connection
@@ -433,5 +452,170 @@ async function handleSaveSettings() {
         }
     } catch(e) {
         addLog('error', 'Fejl ved gem indstillinger');
+    }
+}
+
+// Manual Control Functions
+
+async function handleManualForward() {
+    const speed = document.getElementById('manualSpeed').value;
+    try {
+        const response = await fetch('/api/manual/forward', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `speed=${speed}`
+        });
+
+        if (response.ok) {
+            addLog('info', `Kører fremad med hastighed ${speed}`);
+        } else {
+            addLog('error', 'Fejl ved fremad kommando');
+        }
+    } catch(e) {
+        addLog('error', 'Fejl ved fremad kommando: ' + e.message);
+    }
+}
+
+async function handleManualBackward() {
+    const speed = document.getElementById('manualSpeed').value;
+    try {
+        const response = await fetch('/api/manual/backward', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `speed=${speed}`
+        });
+
+        if (response.ok) {
+            addLog('info', `Kører tilbage med hastighed ${speed}`);
+        } else {
+            addLog('error', 'Fejl ved tilbage kommando');
+        }
+    } catch(e) {
+        addLog('error', 'Fejl ved tilbage kommando: ' + e.message);
+    }
+}
+
+async function handleManualLeft() {
+    const speed = document.getElementById('manualSpeed').value;
+    try {
+        const response = await fetch('/api/manual/left', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `speed=${speed}`
+        });
+
+        if (response.ok) {
+            addLog('info', `Drejer til venstre med hastighed ${speed}`);
+        } else {
+            addLog('error', 'Fejl ved venstre kommando');
+        }
+    } catch(e) {
+        addLog('error', 'Fejl ved venstre kommando: ' + e.message);
+    }
+}
+
+async function handleManualRight() {
+    const speed = document.getElementById('manualSpeed').value;
+    try {
+        const response = await fetch('/api/manual/right', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `speed=${speed}`
+        });
+
+        if (response.ok) {
+            addLog('info', `Drejer til højre med hastighed ${speed}`);
+        } else {
+            addLog('error', 'Fejl ved højre kommando');
+        }
+    } catch(e) {
+        addLog('error', 'Fejl ved højre kommando: ' + e.message);
+    }
+}
+
+async function handleManualStop() {
+    try {
+        const response = await fetch('/api/manual/stop', {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            addLog('info', 'Stoppet');
+        } else {
+            addLog('error', 'Fejl ved stop kommando');
+        }
+    } catch(e) {
+        addLog('error', 'Fejl ved stop kommando: ' + e.message);
+    }
+}
+
+async function handleCuttingStart() {
+    try {
+        const response = await fetch('/api/cutting/start', {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            addLog('info', 'Klippemotor startet');
+        } else {
+            addLog('error', 'Fejl ved start af klippemotor');
+        }
+    } catch(e) {
+        addLog('error', 'Fejl ved start af klippemotor: ' + e.message);
+    }
+}
+
+async function handleCuttingStop() {
+    try {
+        const response = await fetch('/api/cutting/stop', {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            addLog('info', 'Klippemotor stoppet');
+        } else {
+            addLog('error', 'Fejl ved stop af klippemotor');
+        }
+    } catch(e) {
+        addLog('error', 'Fejl ved stop af klippemotor: ' + e.message);
+    }
+}
+
+// Keyboard Control Handler
+function handleKeyboardControl(event) {
+    // Prevent keyboard control if typing in an input field
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+        return;
+    }
+
+    switch(event.key) {
+        case 'ArrowUp':
+            event.preventDefault();
+            handleManualForward();
+            break;
+        case 'ArrowDown':
+            event.preventDefault();
+            handleManualBackward();
+            break;
+        case 'ArrowLeft':
+            event.preventDefault();
+            handleManualLeft();
+            break;
+        case 'ArrowRight':
+            event.preventDefault();
+            handleManualRight();
+            break;
+        case ' ':
+            event.preventDefault();
+            handleManualStop();
+            break;
     }
 }

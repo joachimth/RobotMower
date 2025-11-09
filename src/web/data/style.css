@@ -336,6 +336,107 @@ header h1 {
     flex: 1;
 }
 
+/* Manual Control Panel */
+.manual-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+.direction-pad {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+.middle-row {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-direction {
+    width: 80px;
+    height: 80px;
+    font-size: 2em;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    user-select: none;
+}
+
+.btn-direction:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4);
+}
+
+.btn-direction:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.btn-forward {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+}
+
+.btn-backward {
+    background: linear-gradient(135deg, #ff9800, #e68900);
+    color: white;
+}
+
+.btn-left, .btn-right {
+    background: linear-gradient(135deg, #2196F3, #0b7dda);
+    color: white;
+}
+
+.btn-stop {
+    background: linear-gradient(135deg, #f44336, #da190b);
+    color: white;
+    font-size: 1.5em;
+}
+
+.manual-speed-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 300px;
+}
+
+.manual-speed-control label {
+    font-weight: bold;
+}
+
+.manual-speed-control input[type="range"] {
+    flex: 1;
+}
+
+.manual-speed-control span {
+    min-width: 40px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.cutting-control {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.cutting-control .btn {
+    flex: 1;
+}
+
+.btn-success {
+    background-color: #4CAF50;
+    color: white;
+}
+
 /* Footer */
 footer {
     margin-top: 30px;
