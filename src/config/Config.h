@@ -8,55 +8,55 @@
 // ============================================================================
 
 // ============================================================================
-// PIN DEFINITIONER - ESP32-S3 (Heltec WiFi Kit 32 V3)
+// PIN DEFINITIONER - ESP32-WROOM-32U 38-Pin
 // ============================================================================
+// Pin layout optimeret så hver komponent bruger tilstødende pins
+// Se PINOUT.md for detaljeret pinout diagram
 
 // Motor Pins (Double BTS7960 43A H-bridge High-power Motor Driver)
-// Venstre motor driver
-#define MOTOR_LEFT_RPWM     5      // PWM til venstre motor fremad
-#define MOTOR_LEFT_LPWM     19     // PWM til venstre motor baglæns
-#define MOTOR_LEFT_R_EN     18     // Enable for højre side (fremad)
-#define MOTOR_LEFT_L_EN     17     // Enable for venstre side (baglæns)
-#define MOTOR_LEFT_R_IS     2      // Strømsensor højre side (ADC)
-#define MOTOR_LEFT_L_IS     3      // Strømsensor venstre side (ADC)
+// Venstre motor driver - Grupperet på GPIO 32-35 (tilstødende pins)
+#define MOTOR_LEFT_RPWM     32     // PWM til venstre motor fremad
+#define MOTOR_LEFT_LPWM     33     // PWM til venstre motor baglæns
+#define MOTOR_LEFT_R_EN     25     // Enable for højre side (fremad)
+#define MOTOR_LEFT_L_EN     26     // Enable for venstre side (baglæns)
+#define MOTOR_LEFT_R_IS     34     // Strømsensor højre side (ADC1_CH6, input-only)
+#define MOTOR_LEFT_L_IS     35     // Strømsensor venstre side (ADC1_CH7, input-only)
 
-// Højre motor driver
-#define MOTOR_RIGHT_RPWM    16     // PWM til højre motor fremad
-#define MOTOR_RIGHT_LPWM    15     // PWM til højre motor baglæns
-#define MOTOR_RIGHT_R_EN    4      // Enable for højre side (fremad)
-#define MOTOR_RIGHT_L_EN    6      // Enable for venstre side (baglæns)
-#define MOTOR_RIGHT_R_IS    7      // Strømsensor højre side (ADC)
-#define MOTOR_RIGHT_L_IS    8      // Strømsensor venstre side (ADC)
+// Højre motor driver - Grupperet på GPIO 12-14, 27, 36, 39
+#define MOTOR_RIGHT_RPWM    27     // PWM til højre motor fremad
+#define MOTOR_RIGHT_LPWM    14     // PWM til højre motor baglæns
+#define MOTOR_RIGHT_R_EN    12     // Enable for højre side (fremad)
+#define MOTOR_RIGHT_L_EN    13     // Enable for venstre side (baglæns)
+#define MOTOR_RIGHT_R_IS    36     // Strømsensor højre side (ADC1_CH0, input-only, VP)
+#define MOTOR_RIGHT_L_IS    39     // Strømsensor venstre side (ADC1_CH3, input-only, VN)
 
-// Ultralyd Sensor Pins (HC-SR04)
-#define SENSOR_LEFT_TRIG    21     // Venstre sensor trigger
-#define SENSOR_LEFT_ECHO    47     // Venstre sensor echo
+// Ultralyd Sensor Pins (HC-SR04) - Grupperet sammen
+#define SENSOR_LEFT_TRIG    15     // Venstre sensor trigger
+#define SENSOR_LEFT_ECHO    2      // Venstre sensor echo (ADC2_CH2)
 
-#define SENSOR_MIDDLE_TRIG  48     // Midter sensor trigger
-#define SENSOR_MIDDLE_ECHO  35     // Midter sensor echo
+#define SENSOR_MIDDLE_TRIG  4      // Midter sensor trigger
+#define SENSOR_MIDDLE_ECHO  16     // Midter sensor echo
 
-#define SENSOR_RIGHT_TRIG   36     // Højre sensor trigger
-#define SENSOR_RIGHT_ECHO   37     // Højre sensor echo
+#define SENSOR_RIGHT_TRIG   17     // Højre sensor trigger
+#define SENSOR_RIGHT_ECHO   5      // Højre sensor echo
 
-// IMU Pins (MPU-9250/6050 - I2C)
-#define IMU_SDA             41     // I2C Data
-#define IMU_SCL             42     // I2C Clock
+// IMU Pins (MPU-9250/6050 - I2C) - Standard ESP32 I2C pins
+#define IMU_SDA             21     // I2C Data (standard)
+#define IMU_SCL             22     // I2C Clock (standard)
 
 // Klippermotor Pin (Relay)
-#define CUTTING_RELAY       38     // Relay til klippermotor
+#define CUTTING_RELAY       23     // Relay til klippermotor
 
 // Batteri Monitoring Pin
-#define BATTERY_PIN         1      // ADC pin til batteri spændingsmåling
+#define BATTERY_PIN         19     // ADC pin til batteri spændingsmåling (ADC2_CH8)
 
-// Display Pins (OLED - indbygget i Heltec)
-// Disse er hardware defineret af Heltec board
-#define DISPLAY_SDA         41     // Samme som IMU (delt I2C bus)
-#define DISPLAY_SCL         42     // Samme som IMU (delt I2C bus)
-#define DISPLAY_RST         -1     // Reset (ikke brugt)
-#define DISPLAY_VEXT        36     // Vext On - strømforsyning til display
+// Display - IKKE I BRUG (ESP32-WROOM-32U har ikke indbygget display)
+// Display funktionalitet er deaktiveret i denne version
+// #define DISPLAY_SDA         21     // Ville dele I2C med IMU
+// #define DISPLAY_SCL         22     // Ville dele I2C med IMU
 
-// Status LED (indbygget i Heltec)
-#define LED_BUILTIN         35     // Indbygget LED
+// Status LED (kan tilsluttes eksternt hvis ønsket)
+#define LED_BUILTIN         18     // Kan bruges til status LED
 
 // ============================================================================
 // SENSOR KONSTANTER
@@ -204,7 +204,7 @@
 // FEATURE FLAGS
 // ============================================================================
 
-#define ENABLE_DISPLAY              true   // Aktiver OLED display
+#define ENABLE_DISPLAY              false  // Deaktiveret - ESP32-WROOM-32U har ikke display
 #define ENABLE_IMU                  true   // Aktiver IMU
 #define ENABLE_WEBSOCKET            true   // Aktiver WebSocket
 #define ENABLE_MDNS                 true   // Aktiver mDNS
