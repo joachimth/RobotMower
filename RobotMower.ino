@@ -1,11 +1,11 @@
 /**
  * ============================================================================
- * ROBOT PLÆNEKLIPPER - ESP32-S3
+ * ROBOT PLÆNEKLIPPER - ESP32-WROOM-32U
  * ============================================================================
  * Autonome plæneklipper med systematisk klipningsmønster
  *
  * Hardware:
- * - Heltec WiFi Kit 32 V3 (ESP32-S3)
+ * - ESP32-WROOM-32U Development Board (38-Pin)
  * - Double BTS7960 43A H-bridge Motor Driver (2x for begge motorer)
  * - 3x HC-SR04 Ultralyd Sensorer
  * - MPU-6050/9250 IMU
@@ -19,7 +19,7 @@
  * - IMU baseret retningsbestemmelse
  * - Web interface til kontrol med manuel kontrol
  * - Real-time telemetri via WebSocket
- * - OLED display status
+ * - Ekstern I2C OLED display support (valgfrit)
  * - Strømovervågning for motordriver (BTS7960 current sense)
  *
  * Author: Robot Mower Project
@@ -324,6 +324,9 @@ void initializeWeb() {
         Logger::error("Failed to initialize WebSocket");
         return;
     }
+
+    // Set hardware references for WebSocket
+    webSocket.setHardwareReferences(&stateManager, &motors, &cuttingMech);
     #endif
 
     Logger::info("Web server initialized successfully");

@@ -59,6 +59,14 @@ public:
      */
     int getClientCount();
 
+    /**
+     * Sætter hardware referencer
+     * @param state StateManager pointer
+     * @param mot Motors pointer
+     * @param cut CuttingMechanism pointer
+     */
+    void setHardwareReferences(class StateManager* state, class Motors* mot, class CuttingMechanism* cut);
+
 private:
     /**
      * WebSocket event handler
@@ -79,6 +87,11 @@ private:
 
     // State
     bool initialized;
+
+    // Hardware referencer
+    class StateManager* stateManagerPtr;
+    class Motors* motorsPtr;
+    class CuttingMechanism* cuttingMechPtr;
 };
 
 #endif // WEBSOCKET_H

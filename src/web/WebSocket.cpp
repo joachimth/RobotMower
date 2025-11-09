@@ -4,6 +4,9 @@ WebSocketHandler::WebSocketHandler() {
     ws = nullptr;
     lastBroadcast = 0;
     initialized = false;
+    stateManagerPtr = nullptr;
+    motorsPtr = nullptr;
+    cuttingMechPtr = nullptr;
 }
 
 bool WebSocketHandler::begin(WebServer* webServer) {
@@ -37,6 +40,14 @@ bool WebSocketHandler::begin(WebServer* webServer) {
     Logger::info("WebSocket initialized on /ws");
 
     return true;
+}
+
+void WebSocketHandler::setHardwareReferences(StateManager* state, Motors* mot, CuttingMechanism* cut) {
+    stateManagerPtr = state;
+    motorsPtr = mot;
+    cuttingMechPtr = cut;
+
+    Logger::info("WebSocket hardware references set");
 }
 
 void WebSocketHandler::update() {
@@ -160,7 +171,67 @@ void WebSocketHandler::handleWebSocketMessage(void *arg, uint8_t *data, size_t l
         Logger::debug("WebSocket command: " + command);
         #endif
 
-        // Kommandoer kan håndteres her eller forwarded til andre moduler
-        // F.eks.: "start", "stop", "calibrate", etc.
+        // Håndter automatisk kontrol kommandoer
+        if (command == "start" && stateManagerPtr != nullptr) {
+            stateManagerPtr->startMowing();
+            Logger::info("WS: Start mowing");
+        }
+        else if (command == "stop" && stateManagerPtr != nullptr) {
+            stateManagerPtr->stopMowing();
+            Logger::info("WS: Stop mowing");
+        }
+        else if (command == "pause" && stateManagerPtr != nullptr) {
+            stateManagerPtr->pauseMowing();
+            Logger::info("WS: Pause mowing");
+        }
+        else if (command == "calibrate") {
+            Logger::info("WS: Calibration requested");
+            // Calibration håndteres i main loop
+        }
+        // Håndter manuel kontrol kommandoer
+        else if (command == "forward" && motorsPtr != nullptr) {
+            if (stateManagerPtr != nullptr) {
+                stateManagerPtr->setState(STATE_MANUAL);
+            }
+            motorsPtr->forward(MOTOR_CRUISE_SPEED);
+            Logger::info("WS: Manual forward");
+        }
+        else if (command == "backward" && motorsPtr != nullptr) {
+            if (stateManagerPtr != nullptr) {
+                stateManagerPtr->setState(STATE_MANUAL);
+            }
+            motorsPtr->backward(MOTOR_CRUISE_SPEED);
+            Logger::info("WS: Manual backward");
+        }
+        else if (command == "left" && motorsPtr != nullptr) {
+            if (stateManagerPtr != nullptr) {
+                stateManagerPtr->setState(STATE_MANUAL);
+            }
+            motorsPtr->turnLeft(MOTOR_TURN_SPEED);
+            Logger::info("WS: Manual left");
+        }
+        else if (command == "right" && motorsPtr != nullptr) {
+            if (stateManagerPtr != nullptr) {
+                stateManagerPtr->setState(STATE_MANUAL);
+            }
+            motorsPtr->turnRight(MOTOR_TURN_SPEED);
+            Logger::info("WS: Manual right");
+        }
+        else if (command == "manualStop" && motorsPtr != nullptr) {
+            motorsPtr->stop();
+            Logger::info("WS: Manual stop");
+        }
+        // Håndter klippemotor kommandoer
+        else if (command == "cuttingStart" && cuttingMechPtr != nullptr) {
+            cuttingMechPtr->start();
+            Logger::info("WS: Cutting started");
+        }
+        else if (command == "cuttingStop" && cuttingMechPtr != nullptr) {
+            cuttingMechPtr->stop();
+            Logger::info("WS: Cutting stopped");
+        }
+        else {
+            Logger::warn("WS: Unknown command: " + command);
+        }
     }
 }

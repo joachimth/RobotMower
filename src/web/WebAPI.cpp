@@ -89,6 +89,11 @@ void WebAPI::setupRoutes() {
         handleGetSettings(request);
     });
 
+    // POST /api/settings
+    server->on("/api/settings", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handleUpdateSettings(request);
+    });
+
     // Manuel kontrol endpoints
     // POST /api/manual/forward
     server->on("/api/manual/forward", HTTP_POST, [this](AsyncWebServerRequest *request) {
