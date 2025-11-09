@@ -2,15 +2,23 @@
 #define DISPLAY_H
 
 #include <Arduino.h>
+#include "../config/Config.h"
+
+#if ENABLE_DISPLAY
 #include <Wire.h>
 #include <U8g2lib.h>
-#include "../config/Config.h"
+#endif
 
 /**
  * Display klasse - Håndterer OLED display (128x64)
  *
- * Denne klasse viser robot status på det indbyggede OLED display
- * på Heltec WiFi Kit 32 V3.
+ * BEMÆRK: Display funktionalitet er DEAKTIVERET for ESP32-WROOM-32U
+ * da dette board ikke har et indbygget display.
+ *
+ * For at aktivere ekstern I2C OLED display:
+ * 1. Sæt ENABLE_DISPLAY = true i Config.h
+ * 2. Tilslut ekstern OLED til I2C (deler bus med IMU)
+ * 3. Genimplementer begin() funktionen nedenfor
  */
 class Display {
 public:
@@ -116,8 +124,10 @@ private:
      */
     int getBatteryPercentage(float voltage);
 
-    // U8g2 display objekt (Heltec indbygget OLED)
+    #if ENABLE_DISPLAY
+    // U8g2 display objekt (kun hvis display er aktiveret)
     U8G2_SSD1306_128X64_NONAME_F_HW_I2C* u8g2;
+    #endif
 
     // Timing
     unsigned long lastUpdate;
