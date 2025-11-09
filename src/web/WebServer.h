@@ -20,6 +20,8 @@
 
 #include <ESPAsyncWebServer.h>
 #include <ESPmDNS.h>
+#include <ArduinoOTA.h>
+#include <Update.h>
 #include "../config/Config.h"
 #include "../config/Credentials.h"
 #include "../system/Logger.h"
@@ -77,6 +79,18 @@ public:
      * @return IP adresse som String
      */
     String getIPAddress();
+
+    /**
+     * Opsætter OTA (Over-The-Air) opdatering
+     * Aktiverer både ArduinoOTA og web upload
+     */
+    void setupOTA();
+
+    /**
+     * Håndterer OTA opdateringer
+     * Skal kaldes i loop()
+     */
+    void handleOTA();
 
 private:
     /**

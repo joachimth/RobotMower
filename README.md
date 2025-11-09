@@ -13,6 +13,7 @@ Autonome plæneklipper bygget på ESP32-WROOM-32U med systematisk klipningsmøns
 - **IMU Navigation**: MPU-6050/9250 til præcis retningsbestemmelse
 - **Web Interface**: Komplet responsive web interface med manuel kontrol
 - **WebSocket Telemetri**: Live sensor data og status updates
+- **OTA Updates**: Trådløs firmware opdatering (ArduinoOTA + Web Upload)
 - **Strømovervågning**: Real-time strømmåling fra BTS7960 current sense
 - **Manuel Kontrol**: Direkte motor kontrol via web interface
 - **Batteri Overvågning**: Automatisk low-battery håndtering
@@ -137,6 +138,24 @@ Efter opstart er web interfacet tilgængeligt på:
 
 - **mDNS**: `http://robot-mower.local`
 - **IP**: Se Serial Monitor for IP adresse
+
+### OTA Updates (Over-The-Air)
+
+Opdater firmware trådløst - ingen USB kabel nødvendig! 🚀
+
+**Metode 1: Web Upload**
+1. Åbn `http://robot-mower.local/update`
+2. Upload .bin fil (genereret via Arduino IDE → Sketch → Export Compiled Binary)
+3. Robotten genstarter automatisk
+
+**Metode 2: ArduinoOTA**
+1. Vælg Network Port i Arduino IDE (robot-mower at <IP>)
+2. Upload som normalt (Ctrl+U)
+3. Indtast OTA password (standard: "robot2024" - ÆNDR DETTE!)
+
+⚠️ **Sikkerhed**: Ændr `OTA_PASSWORD` i `src/config/Config.h` før første brug!
+
+Se [API.md](API.md) for detaljeret OTA dokumentation.
 
 ### API Endpoints
 
@@ -316,6 +335,22 @@ Hvis du får "undefined reference" fejl under kompilering:
 - **Motor strøm**: Op til 43A per motor (BTS7960)
 
 ## 🛠️ Udvikling
+
+### OTA Udvikling Workflow
+
+Når du udvikler kan du uploade nye versioner trådløst:
+
+1. **Via Arduino IDE**:
+   - Vælg Network Port (robot-mower)
+   - Upload som normalt
+   - Indtast OTA password
+
+2. **Via Web Interface**:
+   - Export .bin fil: Sketch → Export Compiled Binary
+   - Åbn http://robot-mower.local/update
+   - Upload .bin fil
+
+**Tips**: OTA er meget hurtigere end USB upload (især nyttig når robotten er monteret)
 
 ### Tilføje Nye Features
 

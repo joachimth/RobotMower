@@ -362,6 +362,43 @@ Henter real-time strømdata fra BTS7960 motor drivers.
 
 ---
 
+### GET /update
+
+Viser OTA firmware update interface.
+
+**Browser Interface:**
+Åbn `http://robot-mower.local/update` i en browser for at uploade ny firmware.
+
+**Response:**
+HTML formular til upload af .bin firmware fil.
+
+---
+
+### POST /update
+
+Uploader ny firmware til robotten (OTA update).
+
+**Content-Type:** `multipart/form-data`
+
+**Form Field:**
+- `update` - .bin firmware fil
+
+**Response:**
+```html
+✅ Update Success! Robotten genstarter...
+```
+Eller ved fejl:
+```html
+❌ Update Failed! Prøv igen.
+```
+
+**Note:**
+- Robotten genstarter automatisk efter succesfuld upload
+- Brug Arduino IDE: Sketch → Export Compiled Binary for at generere .bin fil
+- OTA password: Se `OTA_PASSWORD` i Config.h (standard: "robot2024")
+
+---
+
 ## WebSocket API
 
 ### Connection
@@ -631,6 +668,50 @@ curl -X POST http://robot-mower.local/api/settings \
   -H "Content-Type: application/json" \
   -d '{"obstacleThreshold": 35}'
 ```
+
+---
+
+## OTA Updates (Over-The-Air)
+
+Robotten understøtter to typer OTA opdatering:
+
+### 1. Web Upload
+
+Upload firmware via browser:
+1. Åbn `http://robot-mower.local/update` i browser
+2. Vælg .bin firmware fil
+3. Klik "Upload Firmware"
+4. Vent på upload og automatisk genstart
+
+### 2. ArduinoOTA
+
+Upload direkte fra Arduino IDE:
+
+**Opsætning i Arduino IDE:**
+1. Tjek at robotten er forbundet til WiFi
+2. Vælg Port: **Network Port** (robot-mower at <IP-adresse>)
+3. Upload som normalt (Ctrl+U)
+4. Indtast OTA password når prompted
+
+**OTA Konfiguration:**
+- Hostname: `robot-mower`
+- Port: `3232`
+- Password: Se `OTA_PASSWORD` i Config.h (ændres før første brug!)
+
+**Terminal Upload (alternativ):**
+```bash
+# Install espota.py hvis ikke allerede installeret
+python ~/.arduino15/packages/esp32/hardware/esp32/*/tools/espota.py \
+  -i robot-mower.local \
+  -p 3232 \
+  --auth=robot2024 \
+  -f RobotMower.ino.bin
+```
+
+⚠️ **VIGTIGT**:
+- Ændr OTA_PASSWORD i Config.h før første brug
+- Sørg for god WiFi forbindelse under OTA opdatering
+- Undgå at afbryde strømmen under opdatering
 
 ---
 

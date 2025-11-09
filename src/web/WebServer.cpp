@@ -39,6 +39,11 @@ bool WebServer::begin() {
     setupMDNS();
     #endif
 
+    // Opsæt OTA
+    #if ENABLE_OTA
+    setupOTA();
+    #endif
+
     // Opsæt routes
     setupRoutes();
 
@@ -57,6 +62,11 @@ void WebServer::update() {
     if (!initialized) {
         return;
     }
+
+    // Håndter OTA opdateringer
+    #if ENABLE_OTA
+    handleOTA();
+    #endif
 
     // Tjek WiFi status periodisk
     unsigned long currentTime = millis();
@@ -113,12 +123,68 @@ void WebServer::setupRoutes() {
         }
     });
 
+    // OTA update endpoint (Web Upload)
+    #if ENABLE_OTA
+    server->on("/update", HTTP_GET, [](AsyncWebServerRequest *request) {
+        String html = "<!DOCTYPE html><html><head><title>OTA Update</title>";
+        html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
+        html += "<style>body{font-family:Arial;margin:40px;background:#f0f0f0;}";
+        html += ".container{max-width:600px;margin:auto;background:white;padding:30px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}";
+        html += "h1{color:#333;}input[type=file]{margin:20px 0;}";
+        html += "input[type=submit]{background:#4CAF50;color:white;padding:12px 30px;border:none;border-radius:5px;cursor:pointer;font-size:16px;}";
+        html += "input[type=submit]:hover{background:#45a049;}</style>";
+        html += "</head><body><div class='container'>";
+        html += "<h1>🔄 Firmware Update</h1>";
+        html += "<p>Upload ny firmware (.bin fil)</p>";
+        html += "<form method='POST' action='/update' enctype='multipart/form-data'>";
+        html += "<input type='file' name='update' accept='.bin' required><br>";
+        html += "<input type='submit' value='Upload Firmware'>";
+        html += "</form></div></body></html>";
+        request->send(200, "text/html", html);
+    });
+
+    server->on("/update", HTTP_POST, [](AsyncWebServerRequest *request) {
+        bool shouldReboot = !Update.hasError();
+        AsyncWebServerResponse *response = request->beginResponse(200, "text/html",
+            shouldReboot ?
+            "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Update Success</title></head><body><h1>✅ Update Success!</h1><p>Robotten genstarter...</p></body></html>" :
+            "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Update Failed</title></head><body><h1>❌ Update Failed!</h1><p>Prøv igen.</p></body></html>");
+        response->addHeader("Connection", "close");
+        request->send(response);
+
+        if (shouldReboot) {
+            Logger::info("OTA Update successful - rebooting...");
+            delay(1000);
+            ESP.restart();
+        }
+    }, [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+        if (!index) {
+            Logger::info("OTA Update Start: " + filename);
+            if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+                Update.printError(Serial);
+            }
+        }
+        if (!Update.hasError()) {
+            if (Update.write(data, len) != len) {
+                Update.printError(Serial);
+            }
+        }
+        if (final) {
+            if (Update.end(true)) {
+                Logger::info("OTA Update Success: " + String(index + len) + " bytes");
+            } else {
+                Update.printError(Serial);
+            }
+        }
+    });
+    #endif
+
     // Not found handler
     server->onNotFound([this](AsyncWebServerRequest *request) {
         handleNotFound(request);
     });
 
-    Logger::info("Web routes configured (with LittleFS support)");
+    Logger::info("Web routes configured (with LittleFS and OTA support)");
 }
 
 bool WebServer::isClientConnected() {
@@ -196,4 +262,54 @@ void WebServer::handleNotFound(AsyncWebServerRequest *request) {
 
     request->send(404, "text/plain", message);
     Logger::warning("404: " + request->url());
+}
+
+void WebServer::setupOTA() {
+    // Opsæt ArduinoOTA
+    ArduinoOTA.setHostname(OTA_HOSTNAME);
+    ArduinoOTA.setPassword(OTA_PASSWORD);
+    ArduinoOTA.setPort(OTA_PORT);
+
+    ArduinoOTA.onStart([]() {
+        String type;
+        if (ArduinoOTA.getCommand() == U_FLASH) {
+            type = "sketch";
+        } else { // U_SPIFFS
+            type = "filesystem";
+        }
+        Logger::info("OTA: Start updating " + type);
+    });
+
+    ArduinoOTA.onEnd([]() {
+        Logger::info("OTA: Update complete");
+    });
+
+    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+        static unsigned int lastPercent = 0;
+        unsigned int percent = (progress / (total / 100));
+        if (percent != lastPercent && percent % 10 == 0) {
+            Logger::info("OTA Progress: " + String(percent) + "%");
+            lastPercent = percent;
+        }
+    });
+
+    ArduinoOTA.onError([](ota_error_t error) {
+        String errorMsg = "OTA Error[" + String(error) + "]: ";
+        if (error == OTA_AUTH_ERROR) errorMsg += "Auth Failed";
+        else if (error == OTA_BEGIN_ERROR) errorMsg += "Begin Failed";
+        else if (error == OTA_CONNECT_ERROR) errorMsg += "Connect Failed";
+        else if (error == OTA_RECEIVE_ERROR) errorMsg += "Receive Failed";
+        else if (error == OTA_END_ERROR) errorMsg += "End Failed";
+        Logger::error(errorMsg);
+    });
+
+    ArduinoOTA.begin();
+
+    Logger::info("ArduinoOTA initialized");
+    Logger::info("OTA Hostname: " + String(OTA_HOSTNAME));
+    Logger::info("OTA Port: " + String(OTA_PORT));
+}
+
+void WebServer::handleOTA() {
+    ArduinoOTA.handle();
 }
