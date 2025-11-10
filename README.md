@@ -188,6 +188,35 @@ Download ZIP fra GitHub → Arduino IDE → Sketch → Include Library → Add .
 
 **Får du "Sketch too big" fejl?** Se [ARDUINO_IDE_SETUP.md](ARDUINO_IDE_SETUP.md) for løsninger.
 
+### 5. Upload LittleFS Filesystem (Web Interface Filer)
+
+**⚠️ VIGTIGT**: For at få den fulde web interface med manuel kontrol, skal du uploade filsystemet!
+
+**PlatformIO (Anbefalet):**
+```bash
+# Upload filesystem (index.html, style.css, app.js)
+pio run --target uploadfs
+
+# Eller kombinér firmware + filesystem upload:
+pio run --target upload && pio run --target uploadfs
+```
+
+**Arduino IDE:**
+1. Installer [Arduino ESP32 filesystem uploader](https://github.com/me-no-dev/arduino-esp32fs-plugin/releases)
+2. Genstart Arduino IDE
+3. Tools → ESP32 Sketch Data Upload
+4. Vent på upload completion
+
+**Hvad uploader du?**
+- `/data/index.html` - Komplet web interface med manuel kontrol
+- `/data/style.css` - Styling
+- `/data/app.js` - WebSocket og kontrol logik
+
+**Uden filesystem upload:**
+- Du kan kun se API data på `/api/status`
+- Ingen manuel kontrolpanel
+- Ingen sensor visualization
+
 Se [SETUP.md](SETUP.md) for detaljeret opsætningsguide.
 
 ## 🌐 Web Interface
