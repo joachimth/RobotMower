@@ -88,7 +88,7 @@ ObstacleAvoidance obstacleAvoid;
 Movement movement;
 
 // Web
-WebServer webServer;
+MowerWebServer webServer;
 WebAPI webAPI;
 WebSocketHandler webSocket;
 

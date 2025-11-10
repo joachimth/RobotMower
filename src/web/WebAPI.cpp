@@ -17,9 +17,9 @@ WebAPI::WebAPI() {
     initialized = false;
 }
 
-bool WebAPI::begin(WebServer* webServer) {
+bool WebAPI::begin(MowerWebServer* webServer) {
     if (webServer == nullptr) {
-        Logger::error("WebAPI: Invalid WebServer pointer");
+        Logger::error("WebAPI: Invalid MowerWebServer pointer");
         return false;
     }
 

@@ -30,10 +30,10 @@ public:
 
     /**
      * Initialiserer Web API
-     * @param webServer Pointer til WebServer objekt
+     * @param webServer Pointer til MowerWebServer objekt
      * @return true hvis succesfuld, false ved fejl
      */
-    bool begin(WebServer* webServer);
+    bool begin(MowerWebServer* webServer);
 
     /**
      * Sætter hardware references (kaldes fra main)
@@ -95,7 +95,7 @@ private:
     void handleGetCurrent(AsyncWebServerRequest *request);
 
     // Hardware pointers
-    WebServer* webServerPtr;
+    MowerWebServer* webServerPtr;
     StateManager* stateManagerPtr;
     Battery* batteryPtr;
     Sensors* sensorsPtr;
