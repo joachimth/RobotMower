@@ -32,37 +32,37 @@
 // ============================================================================
 
 // Config
-#include "src/config/Config.h"
-#include "src/config/Credentials.h"
+#include "config/Config.h"
+#include "config/Credentials.h"
 
 // System
-#include "src/system/Logger.h"
-#include "src/system/StateManager.h"
-#include "src/system/WiFiManager.h"
-#include "src/system/UpdateManager.h"
+#include "system/Logger.h"
+#include "system/StateManager.h"
+#include "system/WiFiManager.h"
+#include "system/UpdateManager.h"
 
 // Hardware
-#include "src/hardware/Motors.h"
-#include "src/hardware/Sensors.h"
-#include "src/hardware/IMU.h"
+#include "hardware/Motors.h"
+#include "hardware/Sensors.h"
+#include "hardware/IMU.h"
 // Display deaktiveret for ESP32-WROOM-32U (ingen indbygget display)
-// #include "src/hardware/Display.h"
-#include "src/hardware/CuttingMechanism.h"
-#include "src/hardware/Battery.h"
+// #include "hardware/Display.h"
+#include "hardware/CuttingMechanism.h"
+#include "hardware/Battery.h"
 
 // Navigation
-#include "src/navigation/PathPlanner.h"
-#include "src/navigation/ObstacleAvoidance.h"
-#include "src/navigation/Movement.h"
+#include "navigation/PathPlanner.h"
+#include "navigation/ObstacleAvoidance.h"
+#include "navigation/Movement.h"
 
 // Web
-#include "src/web/WebServer.h"
-#include "src/web/WebAPI.h"
-#include "src/web/WebSocket.h"
+#include "web/WebServer.h"
+#include "web/WebAPI.h"
+#include "web/WebSocket.h"
 
 // Utils
-#include "src/utils/Timer.h"
-#include "src/utils/Math.h"
+#include "utils/Timer.h"
+#include "utils/Math.h"
 
 // ============================================================================
 // GLOBAL OBJECTS
