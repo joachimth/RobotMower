@@ -79,15 +79,17 @@
 // ============================================================================
 // MOTOR KONSTANTER
 // ============================================================================
+// OBS: Motorerne er beregnet til 12V, men forsynes med 18V (5S LiPo)
+// PWM værdierne er justeret med faktor ~0.67 (12V/18V) for at kompensere
 
-#define MOTOR_MAX_SPEED             255    // Maksimal PWM værdi
-#define MOTOR_MIN_SPEED             100    // Minimal PWM for at overvinde friktion
-#define MOTOR_CRUISE_SPEED          200    // Normal kørehastighed
-#define MOTOR_TURN_SPEED            180    // Hastighed under drejning
-#define MOTOR_SLOW_SPEED            150    // Langsom hastighed (nær forhindringer)
-#define MOTOR_BACKUP_SPEED          170    // Hastighed ved bakning
+#define MOTOR_MAX_SPEED             170    // Maksimal PWM værdi (justeret for 18V)
+#define MOTOR_MIN_SPEED             67     // Minimal PWM for at overvinde friktion
+#define MOTOR_CRUISE_SPEED          133    // Normal kørehastighed
+#define MOTOR_TURN_SPEED            120    // Hastighed under drejning
+#define MOTOR_SLOW_SPEED            100    // Langsom hastighed (nær forhindringer)
+#define MOTOR_BACKUP_SPEED          113    // Hastighed ved bakning
 
-#define MOTOR_PWM_FREQUENCY         1000   // PWM frekvens (Hz)
+#define MOTOR_PWM_FREQUENCY         25000  // PWM frekvens (Hz) - 25 kHz
 #define MOTOR_PWM_RESOLUTION        8      // PWM opløsning (bits)
 
 // PID konstanter for lige kørsel
@@ -213,8 +215,8 @@
 // SIKKERHED KONSTANTER
 // ============================================================================
 
-#define EMERGENCY_STOP_ENABLED      true   // Aktiver emergency stop
-#define AUTO_STOP_ON_TILT           true   // Stop hvis robotten vælter
+#define EMERGENCY_STOP_ENABLED      false  // Aktiver emergency stop
+#define AUTO_STOP_ON_TILT           false  // Stop hvis robotten vælter
 #define TILT_ANGLE_THRESHOLD        30.0   // Maksimal hældnings vinkel (grader)
 #define OBSTACLE_STOP_DISTANCE      10     // Stop afstand ved forhindring (cm)
 
@@ -222,10 +224,10 @@
 // DEBUG KONSTANTER
 // ============================================================================
 
-#define DEBUG_MODE                  true   // Aktiver debug mode
-#define DEBUG_SENSORS               true   // Debug sensor readings
-#define DEBUG_MOTORS                true   // Debug motor commands
-#define DEBUG_NAVIGATION            true   // Debug navigation logic
+#define DEBUG_MODE                  true   // Aktiver debug mode (nødvendig for status)
+#define DEBUG_SENSORS               false  // Debug sensor readings
+#define DEBUG_MOTORS                true   // Debug motor commands (nødvendig for motorhastighed)
+#define DEBUG_NAVIGATION            false  // Debug navigation logic
 #define DEBUG_WEBSOCKET             false  // Debug WebSocket messages (verbose)
 
 // ============================================================================
