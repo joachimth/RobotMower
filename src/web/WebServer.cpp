@@ -1,7 +1,7 @@
 #include "WebServer.h"
 #include <LittleFS.h>
 
-WebServer::WebServer() {
+MowerWebServer::MowerWebServer() {
     server = nullptr;
     wifiConnected = false;
     apMode = false;
@@ -12,7 +12,7 @@ WebServer::WebServer() {
     updateManager = nullptr;
 }
 
-bool WebServer::begin() {
+bool MowerWebServer::begin() {
     Logger::info("Starting web server...");
 
     // Initialize LittleFS for serving static files
@@ -77,7 +77,7 @@ bool WebServer::begin() {
     return true;
 }
 
-void WebServer::update() {
+void MowerWebServer::update() {
     if (!initialized) {
         return;
     }
@@ -100,7 +100,7 @@ void WebServer::update() {
     }
 }
 
-void WebServer::setupRoutes() {
+void MowerWebServer::setupRoutes() {
     if (server == nullptr) {
         return;
     }
@@ -341,23 +341,23 @@ void WebServer::setupRoutes() {
     Logger::info("Web routes configured (with WiFiManager and UpdateManager support)");
 }
 
-bool WebServer::isClientConnected() {
+bool MowerWebServer::isClientConnected() {
     return wifiConnected && (WiFi.status() == WL_CONNECTED);
 }
 
-AsyncWebServer* WebServer::getServer() {
+AsyncWebServer* MowerWebServer::getServer() {
     return server;
 }
 
-bool WebServer::isWiFiConnected() {
+bool MowerWebServer::isWiFiConnected() {
     return wifiConnected;
 }
 
-String WebServer::getIPAddress() {
+String MowerWebServer::getIPAddress() {
     return ipAddress;
 }
 
-bool WebServer::connectWiFi() {
+bool MowerWebServer::connectWiFi() {
     Logger::info("Connecting to WiFi: " + String(WIFI_SSID));
 
     WiFi.mode(WIFI_STA);
@@ -384,7 +384,7 @@ bool WebServer::connectWiFi() {
     }
 }
 
-void WebServer::setupAccessPoint() {
+void MowerWebServer::setupAccessPoint() {
     Logger::info("Setting up Access Point: " + String(AP_SSID));
 
     WiFi.mode(WIFI_AP);
@@ -399,7 +399,7 @@ void WebServer::setupAccessPoint() {
     }
 }
 
-void WebServer::setupMDNS() {
+void MowerWebServer::setupMDNS() {
     if (MDNS.begin(MDNS_HOSTNAME)) {
         MDNS.addService("http", "tcp", WEB_SERVER_PORT);
         Logger::info("mDNS started: " + String(MDNS_HOSTNAME) + ".local");
@@ -409,7 +409,7 @@ void WebServer::setupMDNS() {
 }
 
 
-void WebServer::handleNotFound(AsyncWebServerRequest *request) {
+void MowerWebServer::handleNotFound(AsyncWebServerRequest *request) {
     // Hvis i AP mode (captive portal), omdiriger alle anmodninger til captive portal siden
     // Dette gør at smartphones og computere automatisk åbner captive portal
     if (wifiManager != nullptr && wifiManager->isAPMode()) {
@@ -427,7 +427,7 @@ void WebServer::handleNotFound(AsyncWebServerRequest *request) {
     Logger::warning("404: " + request->url());
 }
 
-void WebServer::setupOTA() {
+void MowerWebServer::setupOTA() {
     // Opsæt ArduinoOTA
     ArduinoOTA.setHostname(OTA_HOSTNAME);
     ArduinoOTA.setPassword(OTA_PASSWORD);
@@ -473,16 +473,16 @@ void WebServer::setupOTA() {
     Logger::info("OTA Port: " + String(OTA_PORT));
 }
 
-void WebServer::handleOTA() {
+void MowerWebServer::handleOTA() {
     ArduinoOTA.handle();
 }
 
-void WebServer::setWiFiManager(WiFiManager* wifiMgr) {
+void MowerWebServer::setWiFiManager(WiFiManager* wifiMgr) {
     wifiManager = wifiMgr;
     Logger::info("WiFiManager reference set");
 }
 
-void WebServer::setUpdateManager(UpdateManager* updateMgr) {
+void MowerWebServer::setUpdateManager(UpdateManager* updateMgr) {
     updateManager = updateMgr;
     Logger::info("UpdateManager reference set");
 }

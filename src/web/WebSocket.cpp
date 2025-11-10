@@ -12,9 +12,9 @@ WebSocketHandler::WebSocketHandler() {
     cuttingMechPtr = nullptr;
 }
 
-bool WebSocketHandler::begin(WebServer* webServer) {
+bool WebSocketHandler::begin(MowerWebServer* webServer) {
     if (webServer == nullptr) {
-        Logger::error("WebSocket: Invalid WebServer pointer");
+        Logger::error("WebSocket: Invalid MowerWebServer pointer");
         return false;
     }
 

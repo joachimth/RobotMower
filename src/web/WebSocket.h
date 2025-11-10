@@ -22,10 +22,10 @@ public:
 
     /**
      * Initialiserer WebSocket
-     * @param webServer Pointer til WebServer objekt
+     * @param webServer Pointer til MowerWebServer objekt
      * @return true hvis succesfuld, false ved fejl
      */
-    bool begin(WebServer* webServer);
+    bool begin(MowerWebServer* webServer);
 
     /**
      * Opdaterer WebSocket

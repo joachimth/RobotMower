@@ -29,17 +29,17 @@
 #include "../system/UpdateManager.h"
 
 /**
- * WebServer klasse - Håndterer HTTP web server
+ * MowerWebServer klasse - Håndterer HTTP web server
  *
  * Denne klasse opsætter og håndterer web serveren til
  * robot kontrol interface.
  */
-class WebServer {
+class MowerWebServer {
 public:
     /**
      * Constructor
      */
-    WebServer();
+    MowerWebServer();
 
     /**
      * Initialiserer web server og WiFi
