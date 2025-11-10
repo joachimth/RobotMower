@@ -2,6 +2,7 @@
 #define UPDATEMANAGER_H
 
 #include <Arduino.h>
+#include <WiFiClient.h>
 #include <HTTPClient.h>
 #include <Update.h>
 #include <ArduinoJson.h>

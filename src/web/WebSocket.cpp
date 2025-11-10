@@ -1,4 +1,7 @@
 #include "WebSocket.h"
+#include "../system/StateManager.h"
+#include "../hardware/Motors.h"
+#include "../hardware/CuttingMechanism.h"
 
 WebSocketHandler::WebSocketHandler() {
     ws = nullptr;
@@ -231,7 +234,7 @@ void WebSocketHandler::handleWebSocketMessage(void *arg, uint8_t *data, size_t l
             Logger::info("WS: Cutting stopped");
         }
         else {
-            Logger::warn("WS: Unknown command: " + command);
+            Logger::warning("WS: Unknown command: " + command);
         }
     }
 }
