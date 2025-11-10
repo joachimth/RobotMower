@@ -106,23 +106,7 @@ void WebServer::setupRoutes() {
     }
 
     // Serve static files from LittleFS
-    // Root - serve index.html
-    server->on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        if (LittleFS.exists("/index.html")) {
-            request->send(LittleFS, "/index.html", "text/html");
-        } else {
-            // Fallback if LittleFS not available
-            String html = "<!DOCTYPE html><html><head><title>Robot Mower</title>";
-            html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
-            html += "</head><body>";
-            html += "<h1>Robot Mower Control</h1>";
-            html += "<p>Welcome to Robot Mower web interface!</p>";
-            html += "<p><a href='/api/status'>View Status (JSON)</a></p>";
-            html += "<p>Note: Upload data files to enable full web interface</p>";
-            html += "</body></html>";
-            request->send(200, "text/html", html);
-        }
-    });
+    // Note: Root handler "/" is defined in WiFi Manager section below
 
     // Serve CSS file
     server->on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -426,6 +410,15 @@ void WebServer::setupMDNS() {
 
 
 void WebServer::handleNotFound(AsyncWebServerRequest *request) {
+    // Hvis i AP mode (captive portal), omdiriger alle anmodninger til captive portal siden
+    // Dette gør at smartphones og computere automatisk åbner captive portal
+    if (wifiManager != nullptr && wifiManager->isAPMode()) {
+        Logger::info("Captive portal redirect: " + request->url());
+        request->send(200, "text/html", WiFiManager::getCaptivePortalHTML());
+        return;
+    }
+
+    // Normal 404 handling når ikke i AP mode
     String message = "404 Not Found\n\n";
     message += "URI: " + request->url() + "\n";
     message += "Method: " + String((request->method() == HTTP_GET) ? "GET" : "POST") + "\n";
