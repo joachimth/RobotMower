@@ -198,7 +198,7 @@
 // LOGGING KONSTANTER
 // ============================================================================
 
-#define LOG_BUFFER_SIZE             100    // Antal log entries at gemme
+#define LOG_BUFFER_SIZE             50     // Antal log entries at gemme (reduceret for at spare RAM)
 #define SERIAL_BAUD_RATE            115200 // Serial kommunikations hastighed
 #define LOG_TO_SERIAL               true   // Log til Serial Monitor
 #define LOG_TO_WEBSOCKET            true   // Log til WebSocket klienter
@@ -240,7 +240,7 @@
 #define ENABLE_MDNS                 true   // Aktiver mDNS
 #define ENABLE_OTA                  true   // Aktiver OTA updates (ArduinoOTA + Web Upload)
 #define ENABLE_WIFI_MANAGER         true   // Aktiver WiFi Manager med captive portal
-#define ENABLE_AUTO_UPDATE          true   // Aktiver auto-update feature
+#define ENABLE_AUTO_UPDATE          false  // Deaktiver auto-update feature (sparer ~50KB)
 
 // ============================================================================
 // RETNING KONSTANTER

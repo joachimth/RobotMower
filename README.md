@@ -178,10 +178,15 @@ Download ZIP fra GitHub → Arduino IDE → Sketch → Include Library → Add .
 
 1. Forbind ESP32 via USB
 2. Vælg board: **ESP32 Dev Module** eller **NodeMCU-32S**
-3. Vælg korrekt COM port
-4. Upload Speed: 115200 eller 921600
-5. Tryk Upload
-6. Åbn Serial Monitor (115200 baud) for at se status
+3. **⚠️ VIGTIGT - Partition Scheme**: Vælg **"No OTA (2MB APP/2MB SPIFFS)"** eller **"Huge APP (3MB No OTA)"**
+   - Tools → Partition Scheme → **No OTA (2MB APP/2MB SPIFFS)**
+   - Default partition (1.3MB) er for lille!
+4. Vælg korrekt COM port
+5. Upload Speed: 115200 eller 921600
+6. Tryk Upload
+7. Åbn Serial Monitor (115200 baud) for at se status
+
+**Får du "Sketch too big" fejl?** Se [ARDUINO_IDE_SETUP.md](ARDUINO_IDE_SETUP.md) for løsninger.
 
 Se [SETUP.md](SETUP.md) for detaljeret opsætningsguide.
 
