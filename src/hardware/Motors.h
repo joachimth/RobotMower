@@ -152,11 +152,7 @@ private:
     // Emergency stop flag
     bool emergencyStopped;
 
-    // PWM kanaler (ESP32 har 16 PWM kanaler 0-15)
-    static const uint8_t PWM_CHANNEL_LEFT_RPWM = 0;
-    static const uint8_t PWM_CHANNEL_LEFT_LPWM = 1;
-    static const uint8_t PWM_CHANNEL_RIGHT_RPWM = 2;
-    static const uint8_t PWM_CHANNEL_RIGHT_LPWM = 3;
+    // Note: PWM kanaler tildeles automatisk af ledcAttach() i ESP32 Arduino Core 3.0+
 };
 
 #endif // MOTORS_H

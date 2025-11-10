@@ -32,18 +32,13 @@ bool Motors::begin() {
     digitalWrite(MOTOR_RIGHT_R_EN, HIGH);
     digitalWrite(MOTOR_RIGHT_L_EN, HIGH);
 
-    // Konfigurer PWM kanaler (ESP32 Arduino Core 2.x kompatibel API)
+    // Konfigurer PWM kanaler (ESP32 Arduino Core 3.0+ API)
     // BTS7960 bruger separate PWM kanaler for fremad/baglæns
-    ledcSetup(PWM_CHANNEL_LEFT_RPWM, MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION);
-    ledcSetup(PWM_CHANNEL_LEFT_LPWM, MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION);
-    ledcSetup(PWM_CHANNEL_RIGHT_RPWM, MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION);
-    ledcSetup(PWM_CHANNEL_RIGHT_LPWM, MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION);
-
-    // Tilknyt PWM kanaler til pins
-    ledcAttachPin(MOTOR_LEFT_RPWM, PWM_CHANNEL_LEFT_RPWM);
-    ledcAttachPin(MOTOR_LEFT_LPWM, PWM_CHANNEL_LEFT_LPWM);
-    ledcAttachPin(MOTOR_RIGHT_RPWM, PWM_CHANNEL_RIGHT_RPWM);
-    ledcAttachPin(MOTOR_RIGHT_LPWM, PWM_CHANNEL_RIGHT_LPWM);
+    // Det nye API bruger ledcAttach() der returnerer channel nummer automatisk
+    ledcAttach(MOTOR_LEFT_RPWM, MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION);
+    ledcAttach(MOTOR_LEFT_LPWM, MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION);
+    ledcAttach(MOTOR_RIGHT_RPWM, MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION);
+    ledcAttach(MOTOR_RIGHT_LPWM, MOTOR_PWM_FREQUENCY, MOTOR_PWM_RESOLUTION);
 
     // Konfigurer ADC for strømsensorer
     analogReadResolution(12); // 12-bit ADC
@@ -125,10 +120,10 @@ void Motors::stop() {
 
 void Motors::emergencyStop() {
     // Øjeblikkelig stop - stop alle PWM signaler
-    ledcWrite(PWM_CHANNEL_LEFT_RPWM, 0);
-    ledcWrite(PWM_CHANNEL_LEFT_LPWM, 0);
-    ledcWrite(PWM_CHANNEL_RIGHT_RPWM, 0);
-    ledcWrite(PWM_CHANNEL_RIGHT_LPWM, 0);
+    ledcWrite(MOTOR_LEFT_RPWM, 0);
+    ledcWrite(MOTOR_LEFT_LPWM, 0);
+    ledcWrite(MOTOR_RIGHT_RPWM, 0);
+    ledcWrite(MOTOR_RIGHT_LPWM, 0);
 
     // Disable drivers (optional - for ekstra sikkerhed)
     digitalWrite(MOTOR_LEFT_R_EN, LOW);
@@ -209,16 +204,16 @@ void Motors::setLeftMotor(int speed) {
 
     if (speed > 0) {
         // Fremad - brug RPWM (Right PWM)
-        ledcWrite(PWM_CHANNEL_LEFT_RPWM, speed);
-        ledcWrite(PWM_CHANNEL_LEFT_LPWM, 0);
+        ledcWrite(MOTOR_LEFT_RPWM, speed);
+        ledcWrite(MOTOR_LEFT_LPWM, 0);
     } else if (speed < 0) {
         // Baglæns - brug LPWM (Left PWM)
-        ledcWrite(PWM_CHANNEL_LEFT_RPWM, 0);
-        ledcWrite(PWM_CHANNEL_LEFT_LPWM, abs(speed));
+        ledcWrite(MOTOR_LEFT_RPWM, 0);
+        ledcWrite(MOTOR_LEFT_LPWM, abs(speed));
     } else {
         // Stop - begge PWM til 0
-        ledcWrite(PWM_CHANNEL_LEFT_RPWM, 0);
-        ledcWrite(PWM_CHANNEL_LEFT_LPWM, 0);
+        ledcWrite(MOTOR_LEFT_RPWM, 0);
+        ledcWrite(MOTOR_LEFT_LPWM, 0);
     }
 }
 
@@ -227,16 +222,16 @@ void Motors::setRightMotor(int speed) {
 
     if (speed > 0) {
         // Fremad - brug RPWM (Right PWM)
-        ledcWrite(PWM_CHANNEL_RIGHT_RPWM, speed);
-        ledcWrite(PWM_CHANNEL_RIGHT_LPWM, 0);
+        ledcWrite(MOTOR_RIGHT_RPWM, speed);
+        ledcWrite(MOTOR_RIGHT_LPWM, 0);
     } else if (speed < 0) {
         // Baglæns - brug LPWM (Left PWM)
-        ledcWrite(PWM_CHANNEL_RIGHT_RPWM, 0);
-        ledcWrite(PWM_CHANNEL_RIGHT_LPWM, abs(speed));
+        ledcWrite(MOTOR_RIGHT_RPWM, 0);
+        ledcWrite(MOTOR_RIGHT_LPWM, abs(speed));
     } else {
         // Stop - begge PWM til 0
-        ledcWrite(PWM_CHANNEL_RIGHT_RPWM, 0);
-        ledcWrite(PWM_CHANNEL_RIGHT_LPWM, 0);
+        ledcWrite(MOTOR_RIGHT_RPWM, 0);
+        ledcWrite(MOTOR_RIGHT_LPWM, 0);
     }
 }
 
