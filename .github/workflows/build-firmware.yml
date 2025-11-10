@@ -84,7 +84,7 @@ jobs:
 
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -102,8 +102,19 @@ jobs:
       - name: 📝 Generate release notes
         id: release_notes
         run: |
-          VERSION=${GITHUB_REF#refs/tags/}
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+            IS_PRERELEASE=false
+            RELEASE_NAME="Robot Mower $VERSION"
+          else
+            VERSION="latest"
+            IS_PRERELEASE=true
+            RELEASE_NAME="Robot Mower Latest (Development)"
+          fi
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
 
           # Opret release notes
           cat << EOF > RELEASE_NOTES.md
@@ -113,11 +124,11 @@ jobs:
 
           ### Via Web Interface (Anbefalet)
           1. Åbn http://robot-mower.local/update i browser
-          2. Upload \`RobotMower-$VERSION.bin\`
+          2. Upload \`RobotMower-*.bin\` filen
           3. Vent på genstart
 
           ### Via Arduino IDE
-          1. Download \`RobotMower-$VERSION.bin\`
+          1. Download \`RobotMower-*.bin\`
           2. Tools → ESP32 Sketch Data Upload
 
           ### Via PlatformIO
@@ -134,7 +145,7 @@ jobs:
           ## 📋 Changelog
 
           Se commit historik for detaljer:
-          https://github.com/${{ github.repository }}/commits/$VERSION
+          https://github.com/${{ github.repository }}/commits/${{ github.sha }}
 
           ## 🐛 Bug Reports
 
@@ -144,11 +155,12 @@ jobs:
       - name: 🎉 Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Robot Mower ${{ steps.release_notes.outputs.version }}
+          name: ${{ steps.release_notes.outputs.release_name }}
+          tag_name: ${{ steps.release_notes.outputs.version }}
           body_path: RELEASE_NOTES.md
           files: |
             RobotMower-*.bin
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.release_notes.outputs.is_prerelease }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
