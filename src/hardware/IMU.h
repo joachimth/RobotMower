@@ -132,6 +132,10 @@ private:
     const uint8_t PWR_MGMT_1 = 0x6B;
     const uint8_t ACCEL_XOUT_H = 0x3B;
     const uint8_t GYRO_XOUT_H = 0x43;
+    const uint8_t CONFIG = 0x1A;        // DLPF Configuration
+    const uint8_t GYRO_CONFIG = 0x1B;   // Gyroscope Configuration
+    const uint8_t ACCEL_CONFIG = 0x1C;  // Accelerometer Configuration
+    const uint8_t SMPLRT_DIV = 0x19;    // Sample Rate Divider
 
     // Rå sensor værdier
     int16_t accelX, accelY, accelZ;
@@ -151,8 +155,14 @@ private:
     // Drift kompensation
     float gyroBiasZ;              // Estimeret bias for Z gyro
     unsigned long stationaryTime; // Tid robot har været stille
-    const float GYRO_STATIONARY_THRESHOLD = 2.0; // grader/sek
-    const unsigned long BIAS_UPDATE_TIME = 3000; // 3 sekunder stille før bias update
+    const float GYRO_STATIONARY_THRESHOLD = 0.5; // grader/sek (reduceret for bedre detection)
+    const unsigned long BIAS_UPDATE_TIME = 1000; // 1 sekund stille før bias update (reduceret)
+
+    // Gyro smoothing med moving average
+    static const int GYRO_BUFFER_SIZE = 5;
+    float gyroZBuffer[GYRO_BUFFER_SIZE];
+    int gyroZBufferIndex;
+    float getSmoothedGyroZ();
 
     // Timing
     unsigned long lastUpdate;

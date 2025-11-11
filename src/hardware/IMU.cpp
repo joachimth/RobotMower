@@ -12,6 +12,10 @@ IMU::IMU() {
     initialized = false;
     calibrated = false;
     headingOffset = 0.0;
+    gyroZBufferIndex = 0;
+    for (int i = 0; i < GYRO_BUFFER_SIZE; i++) {
+        gyroZBuffer[i] = 0.0;
+    }
 }
 
 bool IMU::begin() {
@@ -49,6 +53,50 @@ bool IMU::begin() {
             Serial.println("[IMU] Warning: Unexpected WHO_AM_I value");
         }
     }
+
+    // Konfigurer Digital Low Pass Filter (DLPF)
+    // DLPF_CFG = 3: Bandwidth 44Hz (gyro), 44Hz (accel), 1kHz sample rate
+    // Dette reducerer højfrekvent støj betydeligt
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(CONFIG);
+    Wire.write(0x03); // DLPF_CFG = 3
+    if (Wire.endTransmission() != 0) {
+        Serial.println("[IMU] Warning: Failed to set DLPF");
+    }
+    delay(10);
+
+    // Konfigurer Gyroscope range: ±250°/s (mest følsom, mindst støj)
+    // FS_SEL = 0: ±250°/s, LSB Sensitivity = 131 LSB/(°/s)
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(GYRO_CONFIG);
+    Wire.write(0x00); // FS_SEL = 0
+    if (Wire.endTransmission() != 0) {
+        Serial.println("[IMU] Warning: Failed to set gyro range");
+    }
+    delay(10);
+
+    // Konfigurer Accelerometer range: ±2g (mest følsom)
+    // AFS_SEL = 0: ±2g, LSB Sensitivity = 16384 LSB/g
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(ACCEL_CONFIG);
+    Wire.write(0x00); // AFS_SEL = 0
+    if (Wire.endTransmission() != 0) {
+        Serial.println("[IMU] Warning: Failed to set accel range");
+    }
+    delay(10);
+
+    // Konfigurer Sample Rate Divider
+    // Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
+    // Med DLPF enabled: Gyro Output = 1kHz, så 1kHz/(1+9) = 100Hz
+    Wire.beginTransmission(MPU_ADDR);
+    Wire.write(SMPLRT_DIV);
+    Wire.write(0x09); // Divider = 9, giver 100Hz sample rate
+    if (Wire.endTransmission() != 0) {
+        Serial.println("[IMU] Warning: Failed to set sample rate");
+    }
+    delay(10);
+
+    Serial.println("[IMU] MPU6050 configured: DLPF=44Hz, Gyro=±250°/s, Accel=±2g, Rate=100Hz");
 
     initialized = true;
     lastUpdate = millis();
@@ -191,6 +239,13 @@ void IMU::readGyroscope() {
 }
 
 void IMU::calculateOrientation() {
+    // Validér deltaTime - forhindrer spring i beregningerne
+    if (deltaTime <= 0.0 || deltaTime > 1.0) {
+        // Ugyldig deltaTime - skip denne opdatering
+        Serial.printf("[IMU] Warning: Invalid deltaTime: %.3f\n", deltaTime);
+        return;
+    }
+
     // Konverter accelerometer værdier til g (assuming ±2g range)
     float accelXg = accelX / 16384.0;
     float accelYg = accelY / 16384.0;
@@ -205,8 +260,16 @@ void IMU::calculateOrientation() {
     float gyroXrate = ((gyroX - gyroXOffset) / 131.0) * deltaTime;
     float gyroYrate = ((gyroY - gyroYOffset) / 131.0) * deltaTime;
 
-    // Anvend både offset OG bias kompensation for Z gyro
-    float gyroZrateRaw = (gyroZ - gyroZOffset) / 131.0; // grader/sek
+    // Anvend smoothing, offset OG bias kompensation for Z gyro
+    float gyroZrateRaw = getSmoothedGyroZ(); // Brug smoothed værdi i grader/sek
+
+    // Validér at gyro værdi er rimelig (ikke sensor fejl)
+    // ±250°/s range, så absolut værdi bør ikke overstige ~200°/s i normal brug
+    if (abs(gyroZrateRaw) > 200.0) {
+        Serial.printf("[IMU] Warning: Extreme gyro value: %.1f deg/s - ignoring\n", gyroZrateRaw);
+        return;
+    }
+
     float gyroZrate = (gyroZrateRaw - gyroBiasZ) * deltaTime; // Anvend bias korrektion
 
     // Komplementær filter for pitch og roll (gyro + accel)
@@ -246,6 +309,19 @@ bool IMU::isStationary() {
     return (gyroZrate < GYRO_STATIONARY_THRESHOLD);
 }
 
+float IMU::getSmoothedGyroZ() {
+    // Tilføj ny måling til ring buffer
+    gyroZBuffer[gyroZBufferIndex] = (gyroZ - gyroZOffset) / 131.0; // grader/sek
+    gyroZBufferIndex = (gyroZBufferIndex + 1) % GYRO_BUFFER_SIZE;
+
+    // Beregn gennemsnit
+    float sum = 0.0;
+    for (int i = 0; i < GYRO_BUFFER_SIZE; i++) {
+        sum += gyroZBuffer[i];
+    }
+    return sum / GYRO_BUFFER_SIZE;
+}
+
 void IMU::updateGyroBias() {
     if (!calibrated) {
         return;
@@ -263,13 +339,14 @@ void IMU::updateGyroBias() {
         if ((currentTime - stationaryTime) > BIAS_UPDATE_TIME) {
             // Opdater bias estimat med exponential moving average
             // Dette antager at gennemsnitlig rotation over tid skal være 0
-            float rawGyroZ = (gyroZ - gyroZOffset) / 131.0; // grader/sek
+            float rawGyroZ = getSmoothedGyroZ(); // Brug smoothed værdi
 
-            // Langsom opdatering af bias (alpha = 0.01 betyder 1% ny, 99% gammel)
-            gyroBiasZ = 0.99 * gyroBiasZ + 0.01 * rawGyroZ;
+            // Hurtigere opdatering af bias (alpha = 0.05 betyder 5% ny, 95% gammel)
+            // Dette gør at bias opdateres hurtigere end før
+            gyroBiasZ = 0.95 * gyroBiasZ + 0.05 * rawGyroZ;
 
             #if DEBUG_IMU
-            if (abs(gyroBiasZ) > 0.1) {
+            if (abs(gyroBiasZ) > 0.05) {
                 Serial.printf("[IMU] Gyro bias Z updated: %.3f deg/s\n", gyroBiasZ);
             }
             #endif
