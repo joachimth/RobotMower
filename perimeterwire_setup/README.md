@@ -1,31 +1,85 @@
-#Perimeter hardware and Code.
+# Perimeter Wire System
 
-The Hardware is:
-ESP32
-Motor driver, eg. L289N driver, or something newer.
+## Overview
 
-The Perimeter wire hardware will start as being just that.
-Hardware for controlling the perimeter wire, with the ability to be switched on/off and monitored via an web API, served by the ESP32.
+The perimeter wire system consists of two parts:
+1. **Sender** (separate ESP32) - Generates the perimeter signal
+2. **Receiver** (on robot mower) - Detects and decodes the signal
 
-The robotmower then has the ability to call the perimeter wire hardware and ask for the wire to be turned on or off.
-This shall of course be implemented in the robotmower's code also.
+## Implementation Status
 
+- [x] Sender project created (`perimeterwire_sender/`)
+- [x] Signal generator (3.2 kHz carrier with pseudo-random coding)
+- [x] Web API for sender control (start/stop/status)
+- [x] Receiver module for robot mower
+- [x] API client for robot mower to control sender
+- [x] Integration in main robot code
 
-Expected perimeter wire details:
+## Hardware
 
-The motor driver is driven by 3.2 Khz (two pulse widths 4808 Hz and 2404 Hz).
-We use a motor driver with integrated current limiting and thermal switch-off (e.g. MC33926).
+### Sender (perimeterwire_sender/)
+- ESP32 (DevKit or similar)
+- Motor driver (MC33926 recommended, or L298N)
+- DC/DC converter with adjustable output (6.5-12V)
+- Perimeter wire (100m+)
 
-The motor driver output voltage can be changed between 6.5-12V via the potentiometer on the DC/DC converter. Adjust the potentiometer so that not more than 1 Ampere current flows.
+### Receiver (on Robot Mower)
+- Coil (100 mH or 150 mH) in upright position at front of robot
+- LM386 operational amplifier module
+  - **Important**: Bypass capacitor C3 on LM386 module for 0-3.3V output
+- Connect LM386 output to GPIO0 (configurable in Config.h)
 
+## Signal Specification
 
+The perimeter signal is Ardumower compatible:
+- Carrier frequency: 3.2 kHz
+- Encoding: Two pulse widths (4808 Hz and 2404 Hz)
+- 24-bit pseudo-random code sequence
+- Maximum current: 1A (adjust via DC/DC potentiometer)
 
-For the Robotmower:
-For receiving the signal, we use a coil (100 mH or 150 mH) in upright position (centered at front in robot) connected to an LM386 operational amplifier (to amplify the received signal).
-When using the LM386 module, capacitor C3 on the LM386 module should be bypassed (which is needed so that the LM386 generates a signal between 0..5V and not the default range -5V..+5V).
-The LM386 output pin should be connected to an analog pin
+## API Endpoints
 
+### Sender API (http://perimeter-sender.local)
+- `GET /api/status` - Get sender status
+- `POST /api/start` - Start signal output
+- `POST /api/stop` - Stop signal output
+- `POST /api/reset` - Reset after error
 
-#Credits to other projects:
-https://wiki.ardumower.de/index.php?title=Perimeter_wire
+### Robot Mower API (http://robot-mower.local)
+- `GET /api/perimeter/status` - Get receiver and sender status
+- `POST /api/perimeter/start` - Start perimeter signal (via sender)
+- `POST /api/perimeter/stop` - Stop perimeter signal
+- `POST /api/perimeter/calibrate` - Calibrate receiver (place coil on wire)
 
+## Configuration
+
+### Sender Configuration
+Edit `perimeterwire_sender/src/config/Config.h`:
+- Pin definitions
+- Signal parameters
+- Current limits
+
+Edit `perimeterwire_sender/src/config/Credentials.h`:
+- WiFi credentials
+
+### Robot Mower Configuration
+Edit `src/config/Config.h`:
+- `PERIMETER_SIGNAL_PIN` - GPIO for receiver input
+- `PERIMETER_SENDER_IP` - IP address of sender ESP32
+- `ENABLE_PERIMETER` - Enable/disable feature
+
+## Building
+
+### Sender
+```bash
+cd perimeterwire_sender
+pio run
+pio run -t upload
+```
+
+### Robot Mower
+The perimeter receiver is integrated in the main robot mower code.
+Build as usual with PlatformIO.
+
+## Credits
+- Ardumower project: https://wiki.ardumower.de/index.php?title=Perimeter_wire

@@ -50,6 +50,11 @@
 // Batteri Monitoring Pin
 #define BATTERY_PIN         19     // ADC pin til batteri spændingsmåling (ADC2_CH8)
 
+// Perimeter Wire Receiver Pin (LM386 output)
+// Coil (100-150mH) -> LM386 forstærker -> GPIO pin
+// LM386 modul: Bypass C3 for 0-3.3V output (ikke -5V til +5V)
+#define PERIMETER_SIGNAL_PIN  0    // ADC pin til perimeter signal (GPIO0/ADC2_CH1)
+
 // Display - IKKE I BRUG (ESP32-WROOM-32U har ikke indbygget display)
 // Display funktionalitet er deaktiveret i denne version
 // #define DISPLAY_SDA         21     // Ville dele I2C med IMU
@@ -241,6 +246,26 @@
 #define ENABLE_OTA                  true   // Aktiver OTA updates (ArduinoOTA + Web Upload)
 #define ENABLE_WIFI_MANAGER         true   // Aktiver WiFi Manager med captive portal
 #define ENABLE_AUTO_UPDATE          false  // Deaktiver auto-update feature (sparer ~50KB)
+#define ENABLE_PERIMETER            true   // Aktiver perimeter wire detektion
+
+// ============================================================================
+// PERIMETER WIRE KONSTANTER
+// ============================================================================
+
+// Perimeter sender API (separat ESP32)
+#define PERIMETER_SENDER_IP         "192.168.1.100"  // IP adresse på perimeter sender
+#define PERIMETER_SENDER_PORT       80               // HTTP port på sender
+#define PERIMETER_API_TIMEOUT       5000             // API timeout (ms)
+
+// Signal detektion
+#define PERIMETER_SIGNAL_THRESHOLD  50      // Minimum signal for detektion
+#define PERIMETER_WIRE_THRESHOLD    200     // Signal niveau for "på kablet"
+#define PERIMETER_TIMEOUT_MS        1000    // Timeout før "ingen signal"
+
+// Adfærd ved perimeter
+#define PERIMETER_BACKUP_DISTANCE   30      // Afstand at bakke ved perimeter (cm)
+#define PERIMETER_TURN_ANGLE        135.0   // Drejningsvinkel ved perimeter (grader)
+#define PERIMETER_SLOWDOWN_DIST     50      // Afstand til at sænke fart (cm)
 
 // ============================================================================
 // RETNING KONSTANTER

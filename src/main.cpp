@@ -49,6 +49,10 @@
 // #include "hardware/Display.h"
 #include "hardware/CuttingMechanism.h"
 #include "hardware/Battery.h"
+#if ENABLE_PERIMETER
+#include "hardware/PerimeterReceiver.h"
+#include "system/PerimeterClient.h"
+#endif
 
 // Navigation
 #include "navigation/PathPlanner.h"
@@ -81,6 +85,10 @@ IMU imu;
 // Display display;
 CuttingMechanism cuttingMech;
 Battery battery;
+#if ENABLE_PERIMETER
+PerimeterReceiver perimeterReceiver;
+PerimeterClient perimeterClient;
+#endif
 
 // Navigation
 PathPlanner pathPlanner;
@@ -100,6 +108,10 @@ Timer batteryCheckTimer(BATTERY_CHECK_INTERVAL, true);
 Timer statusUpdateTimer(STATUS_UPDATE_INTERVAL, true);
 Timer websocketUpdateTimer(WEBSOCKET_UPDATE_INTERVAL, true);
 Timer currentUpdateTimer(100, true); // Strømovervågning hver 100ms
+#if ENABLE_PERIMETER
+Timer perimeterUpdateTimer(50, true);  // Perimeter opdatering 20Hz
+Timer perimeterSenderTimer(5000, true); // Sender status check hver 5 sek
+#endif
 
 // Kalibrerings type enum
 enum CalibrationType {
@@ -133,6 +145,10 @@ void updateBattery();
 void updateWebStatus();
 void updateMotorCurrent();
 void checkSafetyConditions();
+#if ENABLE_PERIMETER
+void updatePerimeter();
+void handlePerimeterBoundary();
+#endif
 
 // ============================================================================
 // SETUP
@@ -216,6 +232,18 @@ void loop() {
         currentUpdateTimer.reset();
     }
 
+    #if ENABLE_PERIMETER
+    if (perimeterUpdateTimer.isExpired()) {
+        updatePerimeter();
+        perimeterUpdateTimer.reset();
+    }
+
+    if (perimeterSenderTimer.isExpired()) {
+        perimeterClient.updateStatus();
+        perimeterSenderTimer.reset();
+    }
+    #endif
+
     // Update WiFi Manager (reconnect handling)
     #if ENABLE_WIFI_MANAGER
     wifiManager.update();
@@ -289,6 +317,19 @@ void initializeHardware() {
         return;
     }
 
+    // Perimeter Wire Receiver
+    #if ENABLE_PERIMETER
+    Logger::info("Initializing perimeter wire receiver...");
+    if (!perimeterReceiver.begin()) {
+        Logger::warning("Failed to initialize Perimeter Receiver - continuing without");
+    }
+
+    Logger::info("Initializing perimeter wire client...");
+    if (!perimeterClient.begin()) {
+        Logger::warning("Failed to connect to Perimeter Sender - will retry");
+    }
+    #endif
+
     Logger::info("Hardware initialized successfully");
 }
 
@@ -356,6 +397,11 @@ void initializeWeb() {
 
     // Set hardware references for API
     webAPI.setHardwareReferences(&stateManager, &battery, &sensors, &imu, &motors, &cuttingMech);
+
+    #if ENABLE_PERIMETER
+    // Set perimeter references for API
+    webAPI.setPerimeterReferences(&perimeterReceiver, &perimeterClient);
+    #endif
 
     // Setup API routes
     webAPI.setupRoutes();
@@ -490,6 +536,17 @@ void requestGyroCalibration() {
 void handleMowingState() {
     // Opdater path planner
     pathPlanner.update();
+
+    // Tjek for perimeter grænse
+    #if ENABLE_PERIMETER
+    if (perimeterReceiver.hasSignal()) {
+        if (perimeterReceiver.isOutside() || perimeterReceiver.getState() == PERIMETER_ON_WIRE) {
+            Logger::info("Perimeter boundary detected!");
+            handlePerimeterBoundary();
+            return;
+        }
+    }
+    #endif
 
     // Tjek for forhindringer
     obstacleAvoid.update(&sensors);
@@ -721,7 +778,86 @@ void checkSafetyConditions() {
         motors.stop();
         Logger::warning("Critical obstacle - stopped");
     }
+
+    // 4. Perimeter grænse
+    #if ENABLE_PERIMETER
+    if (perimeterReceiver.hasSignal() && stateManager.isActive()) {
+        if (perimeterReceiver.isOutside()) {
+            motors.stop();
+            Logger::warning("Outside perimeter - stopped!");
+        }
+    }
+    #endif
 }
+
+// ============================================================================
+// PERIMETER FUNCTIONS
+// ============================================================================
+
+#if ENABLE_PERIMETER
+void updatePerimeter() {
+    // Opdater perimeter modtager
+    perimeterReceiver.update();
+
+    // Debug log
+    #if DEBUG_MODE
+    static unsigned long lastDebug = 0;
+    if (millis() - lastDebug >= 2000) {
+        if (perimeterReceiver.hasSignal()) {
+            Serial.printf("[Perimeter] %s | Strength: %d%% | Dir: %s | Dist: %dcm\n",
+                         perimeterReceiver.getStateString().c_str(),
+                         perimeterReceiver.getSignalStrength(),
+                         perimeterReceiver.getDirectionString().c_str(),
+                         perimeterReceiver.getDistanceToCable());
+        } else {
+            Serial.println("[Perimeter] No signal");
+        }
+        lastDebug = millis();
+    }
+    #endif
+}
+
+void handlePerimeterBoundary() {
+    // Stop klippermotor
+    cuttingMech.stop();
+
+    // Bak væk fra grænsen
+    Logger::info("Backing up from perimeter...");
+    movement.backUp(PERIMETER_BACKUP_DISTANCE);
+    delay(500);
+
+    // Drej væk fra kablet
+    PerimeterDirection dir = perimeterReceiver.getDirection();
+    if (dir == PERIMETER_LEFT) {
+        Logger::info("Perimeter on left - turning right");
+        movement.turnInPlace(RIGHT, MOTOR_TURN_SPEED);
+    } else if (dir == PERIMETER_RIGHT) {
+        Logger::info("Perimeter on right - turning left");
+        movement.turnInPlace(LEFT, MOTOR_TURN_SPEED);
+    } else {
+        // Ukendt retning - drej tilfældigt
+        Logger::info("Perimeter direction unknown - turning right");
+        movement.turnInPlace(RIGHT, MOTOR_TURN_SPEED);
+    }
+
+    // Drej i ca. 135 grader
+    delay(1500);
+    movement.stop();
+
+    // Vent til vi er sikkert inden for perimeteren
+    unsigned long startTime = millis();
+    while (millis() - startTime < 2000) {
+        perimeterReceiver.update();
+        if (perimeterReceiver.isInside()) {
+            break;
+        }
+        delay(50);
+    }
+
+    // Fortsæt klipning
+    stateManager.setState(STATE_MOWING);
+}
+#endif
 
 // ============================================================================
 // END OF FILE

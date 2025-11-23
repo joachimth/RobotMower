@@ -5,6 +5,10 @@
 #include "../hardware/IMU.h"
 #include "../hardware/Motors.h"
 #include "../hardware/CuttingMechanism.h"
+#if ENABLE_PERIMETER
+#include "../hardware/PerimeterReceiver.h"
+#include "../system/PerimeterClient.h"
+#endif
 
 // External kalibrerings funktioner fra main.cpp
 extern void requestGyroCalibration();
@@ -18,6 +22,10 @@ WebAPI::WebAPI() {
     imuPtr = nullptr;
     motorsPtr = nullptr;
     cuttingMechPtr = nullptr;
+    #if ENABLE_PERIMETER
+    perimeterReceiverPtr = nullptr;
+    perimeterClientPtr = nullptr;
+    #endif
     initialized = false;
 }
 
@@ -148,6 +156,25 @@ void WebAPI::setupRoutes() {
     server->on("/api/current", HTTP_GET, [this](AsyncWebServerRequest *request) {
         handleGetCurrent(request);
     });
+
+    #if ENABLE_PERIMETER
+    // Perimeter endpoints
+    server->on("/api/perimeter/status", HTTP_GET, [this](AsyncWebServerRequest *request) {
+        handlePerimeterStatus(request);
+    });
+
+    server->on("/api/perimeter/start", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handlePerimeterStart(request);
+    });
+
+    server->on("/api/perimeter/stop", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handlePerimeterStop(request);
+    });
+
+    server->on("/api/perimeter/calibrate", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handlePerimeterCalibrate(request);
+    });
+    #endif
 
     Logger::info("API routes configured (including manual control)");
 }
@@ -298,6 +325,25 @@ String WebAPI::createStatusJSON() {
         cutting["running"] = cuttingMechPtr->isRunning();
         cutting["safetyLocked"] = cuttingMechPtr->isSafetyLocked();
     }
+
+    // Perimeter
+    #if ENABLE_PERIMETER
+    if (perimeterReceiverPtr != nullptr) {
+        JsonObject perimeter = doc.createNestedObject("perimeter");
+        perimeter["state"] = perimeterReceiverPtr->getStateString();
+        perimeter["hasSignal"] = perimeterReceiverPtr->hasSignal();
+        perimeter["isInside"] = perimeterReceiverPtr->isInside();
+        perimeter["signalStrength"] = perimeterReceiverPtr->getSignalStrength();
+        perimeter["direction"] = perimeterReceiverPtr->getDirectionString();
+        perimeter["distanceToCable"] = perimeterReceiverPtr->getDistanceToCable();
+
+        if (perimeterClientPtr != nullptr) {
+            perimeter["senderConnected"] = perimeterClientPtr->isConnected();
+            perimeter["senderRunning"] = perimeterClientPtr->isSenderRunning();
+            perimeter["senderState"] = perimeterClientPtr->getSenderState();
+        }
+    }
+    #endif
 
     // System info
     doc["uptime"] = millis();
@@ -498,3 +544,93 @@ void WebAPI::handleGetCurrent(AsyncWebServerRequest *request) {
     serializeJson(doc, output);
     request->send(200, "application/json", output);
 }
+
+// ============================================================================
+// Perimeter handlers
+// ============================================================================
+
+#if ENABLE_PERIMETER
+void WebAPI::setPerimeterReferences(PerimeterReceiver* receiver, PerimeterClient* client) {
+    perimeterReceiverPtr = receiver;
+    perimeterClientPtr = client;
+    Logger::info("WebAPI perimeter references set");
+}
+
+void WebAPI::handlePerimeterStatus(AsyncWebServerRequest *request) {
+    StaticJsonDocument<512> doc;
+
+    // Receiver status
+    if (perimeterReceiverPtr != nullptr) {
+        JsonObject receiver = doc.createNestedObject("receiver");
+        receiver["state"] = perimeterReceiverPtr->getStateString();
+        receiver["hasSignal"] = perimeterReceiverPtr->hasSignal();
+        receiver["isInside"] = perimeterReceiverPtr->isInside();
+        receiver["isOutside"] = perimeterReceiverPtr->isOutside();
+        receiver["signalStrength"] = perimeterReceiverPtr->getSignalStrength();
+        receiver["signalMagnitude"] = perimeterReceiverPtr->getSignalMagnitude();
+        receiver["direction"] = perimeterReceiverPtr->getDirectionString();
+        receiver["distanceToCable"] = perimeterReceiverPtr->getDistanceToCable();
+    }
+
+    // Sender status
+    if (perimeterClientPtr != nullptr) {
+        JsonObject sender = doc.createNestedObject("sender");
+        sender["connected"] = perimeterClientPtr->isConnected();
+        sender["running"] = perimeterClientPtr->isSenderRunning();
+        sender["state"] = perimeterClientPtr->getSenderState();
+        sender["current_mA"] = perimeterClientPtr->getSenderCurrent();
+        sender["runtime_ms"] = perimeterClientPtr->getSenderRuntime();
+        sender["ip"] = perimeterClientPtr->getSenderIP();
+    }
+
+    String output;
+    serializeJson(doc, output);
+    request->send(200, "application/json", output);
+}
+
+void WebAPI::handlePerimeterStart(AsyncWebServerRequest *request) {
+    if (perimeterClientPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"Perimeter client not initialized\"}");
+        return;
+    }
+
+    bool success = perimeterClientPtr->startSignal();
+    if (success) {
+        request->send(200, "application/json", "{\"status\":\"started\",\"message\":\"Perimeter signal started\"}");
+        Logger::info("API: Perimeter signal started");
+    } else {
+        String error = perimeterClientPtr->getLastError();
+        request->send(500, "application/json", "{\"error\":\"" + error + "\"}");
+        Logger::error("API: Failed to start perimeter signal: " + error);
+    }
+}
+
+void WebAPI::handlePerimeterStop(AsyncWebServerRequest *request) {
+    if (perimeterClientPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"Perimeter client not initialized\"}");
+        return;
+    }
+
+    bool success = perimeterClientPtr->stopSignal();
+    if (success) {
+        request->send(200, "application/json", "{\"status\":\"stopped\",\"message\":\"Perimeter signal stopped\"}");
+        Logger::info("API: Perimeter signal stopped");
+    } else {
+        String error = perimeterClientPtr->getLastError();
+        request->send(500, "application/json", "{\"error\":\"" + error + "\"}");
+        Logger::error("API: Failed to stop perimeter signal: " + error);
+    }
+}
+
+void WebAPI::handlePerimeterCalibrate(AsyncWebServerRequest *request) {
+    if (perimeterReceiverPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"Perimeter receiver not initialized\"}");
+        return;
+    }
+
+    Logger::info("API: Perimeter calibration requested - place coil on wire!");
+    perimeterReceiverPtr->calibrate();
+    request->send(200, "application/json",
+        "{\"status\":\"calibrated\",\"message\":\"Perimeter calibration complete\"}");
+}
+#endif
