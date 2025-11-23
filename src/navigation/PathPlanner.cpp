@@ -12,6 +12,7 @@ PathPlanner::PathPlanner() {
     rowStartTime = 0;
     patternActive = false;
     initialized = false;
+    perimeterTriggered = false;
 }
 
 bool PathPlanner::begin() {
@@ -65,6 +66,12 @@ bool PathPlanner::shouldTurn() {
         return false;
     }
 
+    // Drej straks hvis perimeter er nået
+    if (perimeterTriggered) {
+        Logger::info("Turn triggered by perimeter boundary");
+        return true;
+    }
+
     // Tjek om vi har kørt langt nok i nuværende række
     // Baseret på tid eller distance (her bruger vi tid som approksimation)
     unsigned long timeInRow = millis() - rowStartTime;
@@ -116,6 +123,7 @@ void PathPlanner::reset() {
     distanceTraveled = 0.0;
     rowStartTime = 0;
     patternActive = false;
+    perimeterTriggered = false;
 
     Logger::debug("PathPlanner reset");
 }
@@ -156,4 +164,22 @@ void PathPlanner::calculateNextHeading() {
         // Ulige rækker - kør i modsat retning
         targetHeading = 180.0;
     }
+}
+
+void PathPlanner::perimeterReached() {
+    if (!patternActive) {
+        return;
+    }
+
+    perimeterTriggered = true;
+    Logger::info("Perimeter boundary reached - ending row " + String(currentRow));
+    Logger::debug("Distance traveled in row: " + String(distanceTraveled) + " cm");
+}
+
+bool PathPlanner::wasPerimeterTriggered() {
+    return perimeterTriggered;
+}
+
+void PathPlanner::clearPerimeterTrigger() {
+    perimeterTriggered = false;
 }

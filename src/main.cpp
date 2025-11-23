@@ -840,7 +840,25 @@ void handlePerimeterBoundary() {
     movement.backUp(PERIMETER_BACKUP_DISTANCE);
     delay(500);
 
-    // Drej væk fra kablet
+    // Tjek om vi er i et aktivt klipningsmønster
+    if (stateManager.getState() == STATE_MOWING && !pathPlanner.isPatternComplete()) {
+        // Mønster er aktivt - brug PathPlanner til intelligent drejning
+        pathPlanner.perimeterReached();
+
+        // Hent drejningsretning fra PathPlanner
+        Direction turnDir = pathPlanner.getTurnDirection();
+        Logger::info("Pattern-aware turn: " + String(turnDir == RIGHT ? "RIGHT" : "LEFT"));
+
+        // Start drejning via state machine
+        stateManager.setState(STATE_TURNING);
+        pathPlanner.startTurn();
+
+        // Clear perimeter trigger efter vi har håndteret det
+        pathPlanner.clearPerimeterTrigger();
+        return;
+    }
+
+    // Ikke i mønster - brug standard drejning baseret på kabel-retning
     PerimeterDirection dir = perimeterReceiver.getDirection();
     if (dir == PERIMETER_LEFT) {
         Logger::info("Perimeter on left - turning right");
