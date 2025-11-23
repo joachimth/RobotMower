@@ -115,6 +115,46 @@
                 </div>
             </section>
 
+            <!-- IMU Kalibrering Panel -->
+            <section class="panel imu-panel">
+                <h2>IMU Kalibrering</h2>
+                <div class="imu-status">
+                    <div class="status-item">
+                        <label>Magnetometer:</label>
+                        <span id="magStatus" class="status-badge">-</span>
+                    </div>
+                    <div class="status-item">
+                        <label>Gyro:</label>
+                        <span id="gyroStatus" class="status-badge">-</span>
+                    </div>
+                </div>
+                <div class="calibration-buttons">
+                    <button id="btnCalibrateGyro" class="btn btn-secondary">Kalibrér Gyro</button>
+                    <button id="btnCalibrateMag" class="btn btn-primary">Kalibrér Magnetometer</button>
+                </div>
+                <p class="hint">Gyro: Hold robotten stille. Magnetometer: Roter robotten langsomt.</p>
+            </section>
+
+        <!-- Kalibrerings Modal -->
+        <div id="calibrationModal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="calModalTitle">Kalibrering</h2>
+                <div class="cal-instructions">
+                    <p id="calInstructions">Instruktioner vises her...</p>
+                </div>
+                <div class="cal-progress-container">
+                    <div class="cal-progress-bar">
+                        <div id="calProgressFill" class="cal-progress-fill"></div>
+                    </div>
+                    <span id="calProgressText">0%</span>
+                </div>
+                <div class="cal-status">
+                    <p id="calStatusText">Venter...</p>
+                </div>
+                <button id="btnCancelCalibration" class="btn btn-danger">Afbryd</button>
+            </div>
+        </div>
+
             <!-- Logs -->
             <section class="panel logs-panel">
                 <h2>Debug Logs</h2>

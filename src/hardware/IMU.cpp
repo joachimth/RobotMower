@@ -1,6 +1,9 @@
 #include "IMU.h"
 #include <math.h>
 
+// NVS namespace for IMU kalibrering
+static const char* NVS_NAMESPACE = "imu_cal";
+
 IMU::IMU()
     : _ax(0), _ay(0), _az(0),
       _gx(0), _gy(0), _gz(0),
@@ -17,7 +20,14 @@ IMU::IMU()
       _initialized(false),
       _gyroCalibrated(false),
       _magnetometerAvailable(false),
+      _magCalibrated(false),
       _headingOffset(0),
+      _magCalibrating(false),
+      _magCalStartTime(0),
+      _magCalDuration(0),
+      _magMinX(9999), _magMaxX(-9999),
+      _magMinY(9999), _magMaxY(-9999),
+      _magMinZ(9999), _magMaxZ(-9999),
       _encoderFusionEnabled(false),
       _encoderHeading(0),
       _encoderConfidence(0)
@@ -53,10 +63,21 @@ bool IMU::begin() {
     _initialized = true;
 
     Serial.println("[IMU] Initialized successfully");
-    Serial.println("[IMU] !!! IMPORTANT: Run calibrateGyro() before use !!!");
 
     // Sæt default magnetisk deklination for Danmark (~3 grader øst)
     setDeclination(3.0f);
+
+    // Forsøg at indlæse gemt kalibrering
+    if (loadCalibration()) {
+        Serial.println("[IMU] Loaded saved calibration from NVS");
+    } else {
+        Serial.println("[IMU] No saved calibration found");
+        if (_magnetometerAvailable) {
+            Serial.println("[IMU] !!! Run calibrateMag() for best heading accuracy !!!");
+        }
+    }
+
+    Serial.println("[IMU] !!! IMPORTANT: Run calibrateGyro() before use !!!");
 
     return true;
 }
@@ -512,4 +533,227 @@ void IMU::setEncoderFusionEnabled(bool enabled) {
         Serial.println("[IMU] Encoder fusion disabled");
         _encoderConfidence = 0;
     }
+}
+
+// ========== Magnetometer Kalibrering ==========
+
+bool IMU::calibrateMag(uint16_t durationSec) {
+    if (!_initialized) {
+        Serial.println("[IMU] Error: Not initialized");
+        return false;
+    }
+
+    if (!_magnetometerAvailable) {
+        Serial.println("[IMU] Error: No magnetometer available");
+        return false;
+    }
+
+    Serial.println("[IMU] ========================================");
+    Serial.println("[IMU] Starting magnetometer calibration");
+    Serial.printf("[IMU] Duration: %d seconds\n", durationSec);
+    Serial.println("[IMU] ----------------------------------------");
+    Serial.println("[IMU] ROTATE the robot SLOWLY in ALL directions!");
+    Serial.println("[IMU] Try to cover all orientations (360° + tilt)");
+    Serial.println("[IMU] ========================================");
+
+    // Reset min/max værdier
+    _magMinX = 9999.0f;  _magMaxX = -9999.0f;
+    _magMinY = 9999.0f;  _magMaxY = -9999.0f;
+    _magMinZ = 9999.0f;  _magMaxZ = -9999.0f;
+
+    _magCalStartTime = millis();
+    _magCalDuration = durationSec;
+    _magCalibrating = true;
+
+    unsigned long endTime = _magCalStartTime + (durationSec * 1000UL);
+    uint8_t lastProgress = 0;
+
+    while (millis() < endTime) {
+        // Læs magnetometer
+        if (readMagnetometer()) {
+            // Opdater min/max
+            if (_mx < _magMinX) _magMinX = _mx;
+            if (_mx > _magMaxX) _magMaxX = _mx;
+            if (_my < _magMinY) _magMinY = _my;
+            if (_my > _magMaxY) _magMaxY = _my;
+            if (_mz < _magMinZ) _magMinZ = _mz;
+            if (_mz > _magMaxZ) _magMaxZ = _mz;
+        }
+
+        // Vis progress hver 10%
+        uint8_t progress = getMagCalibrationProgress();
+        if (progress >= lastProgress + 10) {
+            Serial.printf("[IMU] Calibration progress: %d%%\n", progress);
+            Serial.printf("[IMU]   X: %.1f to %.1f\n", _magMinX, _magMaxX);
+            Serial.printf("[IMU]   Y: %.1f to %.1f\n", _magMinY, _magMaxY);
+            Serial.printf("[IMU]   Z: %.1f to %.1f\n", _magMinZ, _magMaxZ);
+            lastProgress = progress;
+        }
+
+        delay(10); // ~100Hz sampling
+
+        // Tjek om kalibrering er afbrudt
+        if (!_magCalibrating) {
+            Serial.println("[IMU] Calibration cancelled");
+            return false;
+        }
+    }
+
+    _magCalibrating = false;
+
+    // Beregn hard iron offset (bias) = centrum af min/max
+    _magBiasX = (_magMinX + _magMaxX) / 2.0f;
+    _magBiasY = (_magMinY + _magMaxY) / 2.0f;
+    _magBiasZ = (_magMinZ + _magMaxZ) / 2.0f;
+
+    // Beregn soft iron scale faktorer
+    // Normaliserer så alle akser har samme range
+    float rangeX = (_magMaxX - _magMinX) / 2.0f;
+    float rangeY = (_magMaxY - _magMinY) / 2.0f;
+    float rangeZ = (_magMaxZ - _magMinZ) / 2.0f;
+
+    // Tjek for gyldige ranges (forhindrer division med 0)
+    if (rangeX < 1.0f || rangeY < 1.0f || rangeZ < 1.0f) {
+        Serial.println("[IMU] Error: Insufficient rotation during calibration!");
+        Serial.println("[IMU] Please rotate more and try again.");
+        return false;
+    }
+
+    float avgRange = (rangeX + rangeY + rangeZ) / 3.0f;
+    _magScaleX = avgRange / rangeX;
+    _magScaleY = avgRange / rangeY;
+    _magScaleZ = avgRange / rangeZ;
+
+    _magCalibrated = true;
+
+    Serial.println("[IMU] ========================================");
+    Serial.println("[IMU] Magnetometer calibration complete!");
+    Serial.printf("[IMU] Hard iron (bias): X=%.2f, Y=%.2f, Z=%.2f\n",
+                  _magBiasX, _magBiasY, _magBiasZ);
+    Serial.printf("[IMU] Soft iron (scale): X=%.3f, Y=%.3f, Z=%.3f\n",
+                  _magScaleX, _magScaleY, _magScaleZ);
+    Serial.println("[IMU] ========================================");
+
+    // Gem automatisk til NVS
+    if (saveCalibration()) {
+        Serial.println("[IMU] Calibration saved to NVS");
+    }
+
+    return true;
+}
+
+bool IMU::isMagCalibrating() {
+    return _magCalibrating;
+}
+
+void IMU::cancelMagCalibration() {
+    if (_magCalibrating) {
+        _magCalibrating = false;
+        Serial.println("[IMU] Magnetometer calibration cancelled");
+    }
+}
+
+uint8_t IMU::getMagCalibrationProgress() {
+    if (!_magCalibrating || _magCalDuration == 0) {
+        return 0;
+    }
+
+    unsigned long elapsed = millis() - _magCalStartTime;
+    unsigned long total = _magCalDuration * 1000UL;
+
+    if (elapsed >= total) {
+        return 100;
+    }
+
+    return (uint8_t)((elapsed * 100) / total);
+}
+
+bool IMU::isMagCalibrated() {
+    return _magCalibrated;
+}
+
+// ========== NVS Kalibrerings Storage ==========
+
+bool IMU::saveCalibration() {
+    Preferences prefs;
+
+    if (!prefs.begin(NVS_NAMESPACE, false)) {
+        Serial.println("[IMU] Error: Failed to open NVS");
+        return false;
+    }
+
+    // Gem magnetometer kalibrering
+    prefs.putFloat("magBiasX", _magBiasX);
+    prefs.putFloat("magBiasY", _magBiasY);
+    prefs.putFloat("magBiasZ", _magBiasZ);
+    prefs.putFloat("magScaleX", _magScaleX);
+    prefs.putFloat("magScaleY", _magScaleY);
+    prefs.putFloat("magScaleZ", _magScaleZ);
+
+    // Gem gyro kalibrering
+    prefs.putFloat("gyroBiasX", _gyroBiasX);
+    prefs.putFloat("gyroBiasY", _gyroBiasY);
+    prefs.putFloat("gyroBiasZ", _gyroBiasZ);
+
+    // Gem flag
+    prefs.putBool("magCal", _magCalibrated);
+    prefs.putBool("gyroCal", _gyroCalibrated);
+
+    // Gem deklination
+    prefs.putFloat("declination", _declination);
+
+    prefs.end();
+
+    Serial.println("[IMU] Calibration saved to NVS");
+    return true;
+}
+
+bool IMU::loadCalibration() {
+    Preferences prefs;
+
+    if (!prefs.begin(NVS_NAMESPACE, true)) { // true = read-only
+        return false;
+    }
+
+    // Tjek om der er gemt kalibrering
+    bool hasMagCal = prefs.getBool("magCal", false);
+    bool hasGyroCal = prefs.getBool("gyroCal", false);
+
+    if (!hasMagCal && !hasGyroCal) {
+        prefs.end();
+        return false;
+    }
+
+    // Indlæs magnetometer kalibrering
+    if (hasMagCal) {
+        _magBiasX = prefs.getFloat("magBiasX", 0);
+        _magBiasY = prefs.getFloat("magBiasY", 0);
+        _magBiasZ = prefs.getFloat("magBiasZ", 0);
+        _magScaleX = prefs.getFloat("magScaleX", 1.0f);
+        _magScaleY = prefs.getFloat("magScaleY", 1.0f);
+        _magScaleZ = prefs.getFloat("magScaleZ", 1.0f);
+        _magCalibrated = true;
+
+        Serial.printf("[IMU] Loaded mag cal - Bias: (%.1f, %.1f, %.1f), Scale: (%.2f, %.2f, %.2f)\n",
+                      _magBiasX, _magBiasY, _magBiasZ,
+                      _magScaleX, _magScaleY, _magScaleZ);
+    }
+
+    // Indlæs gyro kalibrering (bruges som startværdi, bør re-kalibreres)
+    if (hasGyroCal) {
+        _gyroBiasX = prefs.getFloat("gyroBiasX", 0);
+        _gyroBiasY = prefs.getFloat("gyroBiasY", 0);
+        _gyroBiasZ = prefs.getFloat("gyroBiasZ", 0);
+        // Bemærk: Vi sætter IKKE _gyroCalibrated = true her
+        // Gyro bør re-kalibreres ved hver opstart
+
+        Serial.printf("[IMU] Loaded gyro bias (as initial values): (%.4f, %.4f, %.4f)\n",
+                      _gyroBiasX, _gyroBiasY, _gyroBiasZ);
+    }
+
+    // Indlæs deklination
+    _declination = prefs.getFloat("declination", 3.0f * PI / 180.0f);
+
+    prefs.end();
+    return true;
 }

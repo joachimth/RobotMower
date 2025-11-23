@@ -5,6 +5,8 @@ let ws = null;
 let wsConnected = false;
 let autoScroll = true;
 let updateInterval = null;
+let calibrationInProgress = false;
+let calibrationTimer = null;
 
 // Canvas contexts
 let sensorCanvas = null;
@@ -42,6 +44,11 @@ function initializeEventListeners() {
     document.getElementById('btnStop').addEventListener('click', handleStop);
     document.getElementById('btnPause').addEventListener('click', handlePause);
     document.getElementById('btnCalibrate').addEventListener('click', handleCalibrate);
+
+    // IMU Calibration buttons
+    document.getElementById('btnCalibrateGyro').addEventListener('click', handleCalibrateGyro);
+    document.getElementById('btnCalibrateMag').addEventListener('click', handleCalibrateMag);
+    document.getElementById('btnCancelCalibration').addEventListener('click', handleCancelCalibration);
 
     // Manual control buttons
     document.getElementById('btnForward').addEventListener('click', handleManualForward);
@@ -201,6 +208,11 @@ function updateDashboard(data) {
         document.getElementById('heading').textContent = `${heading}°`;
         document.getElementById('compassHeading').textContent = heading;
         drawCompass(heading);
+    }
+
+    // IMU Status
+    if (data.imu) {
+        updateIMUStatus(data.imu);
     }
 
     // Sensors
@@ -618,4 +630,155 @@ function handleKeyboardControl(event) {
             handleManualStop();
             break;
     }
+}
+
+// ========== IMU Kalibrering Funktioner ==========
+
+// Update IMU status badges
+function updateIMUStatus(imu) {
+    const magStatus = document.getElementById('magStatus');
+    const gyroStatus = document.getElementById('gyroStatus');
+
+    // Magnetometer status
+    if (!imu.hasMagnetometer) {
+        magStatus.textContent = 'Ikke fundet';
+        magStatus.className = 'status-badge status-error';
+    } else if (imu.magCalibrated) {
+        magStatus.textContent = 'Kalibreret';
+        magStatus.className = 'status-badge status-ok';
+    } else {
+        magStatus.textContent = 'Ikke kalibreret';
+        magStatus.className = 'status-badge status-warning';
+    }
+
+    // Gyro status
+    if (imu.gyroCalibrated) {
+        gyroStatus.textContent = 'Kalibreret';
+        gyroStatus.className = 'status-badge status-ok';
+    } else {
+        gyroStatus.textContent = 'Ikke kalibreret';
+        gyroStatus.className = 'status-badge status-warning';
+    }
+
+    // Disable mag calibration button if no magnetometer
+    const btnCalibrateMag = document.getElementById('btnCalibrateMag');
+    if (!imu.hasMagnetometer) {
+        btnCalibrateMag.disabled = true;
+        btnCalibrateMag.title = 'Magnetometer ikke tilgængelig';
+    } else {
+        btnCalibrateMag.disabled = false;
+        btnCalibrateMag.title = '';
+    }
+}
+
+// Handle Gyro Calibration
+async function handleCalibrateGyro() {
+    if (calibrationInProgress) return;
+
+    showCalibrationModal(
+        'Gyro Kalibrering',
+        'Hold robotten HELT STILLE under kalibreringen!',
+        5 // 5 sekunder for gyro
+    );
+
+    try {
+        const response = await fetch('/api/calibrate', { method: 'POST' });
+        if (response.ok) {
+            addLog('info', 'Gyro kalibrering startet');
+        } else {
+            hideCalibrationModal();
+            addLog('error', 'Fejl ved start af gyro kalibrering');
+        }
+    } catch(e) {
+        hideCalibrationModal();
+        addLog('error', 'Fejl ved gyro kalibrering: ' + e.message);
+    }
+}
+
+// Handle Magnetometer Calibration
+async function handleCalibrateMag() {
+    if (calibrationInProgress) return;
+
+    showCalibrationModal(
+        'Magnetometer Kalibrering',
+        'ROTER robotten LANGSOMT i ALLE retninger!\n\nDrej 360° vandret, og vip den frem/tilbage og side til side for at dække alle orienteringer.',
+        30 // 30 sekunder for magnetometer
+    );
+
+    try {
+        const response = await fetch('/api/calibrate/mag', { method: 'POST' });
+        const data = await response.json();
+
+        if (response.ok) {
+            addLog('info', 'Magnetometer kalibrering startet - roter robotten!');
+        } else {
+            hideCalibrationModal();
+            addLog('error', data.error || 'Fejl ved start af magnetometer kalibrering');
+        }
+    } catch(e) {
+        hideCalibrationModal();
+        addLog('error', 'Fejl ved magnetometer kalibrering: ' + e.message);
+    }
+}
+
+// Handle Cancel Calibration
+function handleCancelCalibration() {
+    hideCalibrationModal();
+    addLog('info', 'Kalibrering afbrudt af bruger');
+    // Note: Kalibrering på ESP32 fortsætter, men UI lukkes
+}
+
+// Show Calibration Modal with progress
+function showCalibrationModal(title, instructions, durationSec) {
+    calibrationInProgress = true;
+
+    document.getElementById('calModalTitle').textContent = title;
+    document.getElementById('calInstructions').textContent = instructions;
+    document.getElementById('calProgressFill').style.width = '0%';
+    document.getElementById('calProgressText').textContent = '0%';
+    document.getElementById('calStatusText').textContent = 'Kalibrering i gang...';
+    document.getElementById('calibrationModal').classList.remove('hidden');
+
+    // Start progress timer
+    let elapsed = 0;
+    const intervalMs = 100;
+    const totalMs = durationSec * 1000;
+
+    calibrationTimer = setInterval(() => {
+        elapsed += intervalMs;
+        const progress = Math.min(100, Math.round((elapsed / totalMs) * 100));
+
+        document.getElementById('calProgressFill').style.width = progress + '%';
+        document.getElementById('calProgressText').textContent = progress + '%';
+
+        // Update status text
+        const remaining = Math.ceil((totalMs - elapsed) / 1000);
+        if (remaining > 0) {
+            document.getElementById('calStatusText').textContent =
+                `Kalibrering i gang... ${remaining} sekunder tilbage`;
+        }
+
+        if (elapsed >= totalMs) {
+            clearInterval(calibrationTimer);
+            document.getElementById('calStatusText').textContent = 'Kalibrering færdig!';
+
+            // Auto-hide after 2 seconds
+            setTimeout(() => {
+                hideCalibrationModal();
+                addLog('info', 'Kalibrering gennemført');
+            }, 2000);
+        }
+    }, intervalMs);
+}
+
+// Hide Calibration Modal
+function hideCalibrationModal() {
+    calibrationInProgress = false;
+
+    if (calibrationTimer) {
+        clearInterval(calibrationTimer);
+        calibrationTimer = null;
+    }
+
+    document.getElementById('calibrationModal').classList.add('hidden');
 }
