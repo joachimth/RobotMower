@@ -101,6 +101,16 @@ Timer statusUpdateTimer(STATUS_UPDATE_INTERVAL, true);
 Timer websocketUpdateTimer(WEBSOCKET_UPDATE_INTERVAL, true);
 Timer currentUpdateTimer(100, true); // Strømovervågning hver 100ms
 
+// Kalibrerings type enum
+enum CalibrationType {
+    CAL_NONE = 0,
+    CAL_GYRO,           // Standard gyro kalibrering
+    CAL_MAGNETOMETER    // Magnetometer kalibrering (kræver rotation)
+};
+
+// Kalibrerings state
+volatile CalibrationType pendingCalibration = CAL_NONE;
+
 // ============================================================================
 // FORWARD DECLARATIONS
 // ============================================================================
@@ -424,23 +434,57 @@ void handleManualState() {
 }
 
 void handleCalibratingState() {
-    // Kalibrerer IMU
+    // Håndterer forskellige typer kalibrering
     static bool calibrationStarted = false;
+    static CalibrationType currentCalType = CAL_NONE;
 
     if (!calibrationStarted) {
-        Logger::info("Starting IMU calibration - keep robot still!");
-        // Display deaktiveret
-        // #if ENABLE_DISPLAY
-        // display.showCalibration(0);
-        // #endif
-
-        imu.calibrateGyro();
+        // Bestem kalibrerings type
+        currentCalType = pendingCalibration;
+        if (currentCalType == CAL_NONE) {
+            currentCalType = CAL_GYRO; // Default til gyro
+        }
+        pendingCalibration = CAL_NONE;
         calibrationStarted = true;
 
-        // Efter kalibrering, gå tilbage til IDLE
-        stateManager.setState(STATE_IDLE);
-        calibrationStarted = false;
+        if (currentCalType == CAL_GYRO) {
+            Logger::info("Starting gyro calibration - keep robot still!");
+            imu.calibrateGyro();
+            Logger::info("Gyro calibration complete");
+            stateManager.setState(STATE_IDLE);
+            calibrationStarted = false;
+        }
+        else if (currentCalType == CAL_MAGNETOMETER) {
+            if (!imu.hasMagnetometer()) {
+                Logger::error("Magnetometer not available!");
+                stateManager.setState(STATE_IDLE);
+                calibrationStarted = false;
+                return;
+            }
+            Logger::info("Starting magnetometer calibration - ROTATE robot slowly!");
+            // calibrateMag() blokerer i den angivne tid (30 sek default)
+            bool success = imu.calibrateMag(30);
+            if (success) {
+                Logger::info("Magnetometer calibration complete and saved!");
+            } else {
+                Logger::error("Magnetometer calibration failed!");
+            }
+            stateManager.setState(STATE_IDLE);
+            calibrationStarted = false;
+        }
     }
+}
+
+// Funktion til at starte magnetometer kalibrering (kan kaldes fra WebAPI)
+void requestMagCalibration() {
+    pendingCalibration = CAL_MAGNETOMETER;
+    stateManager.setState(STATE_CALIBRATING);
+}
+
+// Funktion til at starte gyro kalibrering (kan kaldes fra WebAPI)
+void requestGyroCalibration() {
+    pendingCalibration = CAL_GYRO;
+    stateManager.setState(STATE_CALIBRATING);
 }
 
 void handleMowingState() {

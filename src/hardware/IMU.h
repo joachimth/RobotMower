@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <Wire.h>
+#include <Preferences.h>
 #include "../config/Config.h"
 
 /**
@@ -43,6 +44,49 @@ public:
      */
     void setMagCalibration(float biasX, float biasY, float biasZ,
                            float scaleX, float scaleY, float scaleZ);
+
+    /**
+     * Starter magnetometer kalibrering
+     * Robotten skal roteres 360° i alle retninger under kalibrering
+     * @param durationSec Varighed af kalibrering i sekunder (default 30)
+     * @return true hvis kalibrering lykkedes
+     */
+    bool calibrateMag(uint16_t durationSec = 30);
+
+    /**
+     * Tjek om magnetometer kalibrering er i gang
+     * @return true hvis kalibrering kører
+     */
+    bool isMagCalibrating();
+
+    /**
+     * Afbryd igangværende magnetometer kalibrering
+     */
+    void cancelMagCalibration();
+
+    /**
+     * Hent magnetometer kalibrerings fremskridt (0-100%)
+     * @return Fremskridt i procent
+     */
+    uint8_t getMagCalibrationProgress();
+
+    /**
+     * Tjek om magnetometer er kalibreret
+     * @return true hvis kalibreret (enten manuelt eller fra NVS)
+     */
+    bool isMagCalibrated();
+
+    /**
+     * Gem kalibrering til NVS (persistent storage)
+     * @return true hvis succesfuld
+     */
+    bool saveCalibration();
+
+    /**
+     * Indlæs kalibrering fra NVS
+     * @return true hvis kalibrering blev fundet og indlæst
+     */
+    bool loadCalibration();
 
     /**
      * Sæt magnetisk deklination for lokation
@@ -209,7 +253,16 @@ private:
     bool _initialized;
     bool _gyroCalibrated;
     bool _magnetometerAvailable;
+    bool _magCalibrated;
     float _headingOffset;
+
+    // ========== Magnetometer Kalibrering State ==========
+    bool _magCalibrating;
+    unsigned long _magCalStartTime;
+    uint16_t _magCalDuration;
+    float _magMinX, _magMaxX;
+    float _magMinY, _magMaxY;
+    float _magMinZ, _magMaxZ;
 
     // ========== Encoder Fusion (forberedt) ==========
     bool _encoderFusionEnabled;

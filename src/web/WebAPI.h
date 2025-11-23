@@ -79,6 +79,7 @@ private:
     void handleStop(AsyncWebServerRequest *request);
     void handlePause(AsyncWebServerRequest *request);
     void handleCalibrate(AsyncWebServerRequest *request);
+    void handleCalibrateMag(AsyncWebServerRequest *request);
     void handleGetLogs(AsyncWebServerRequest *request);
     void handleGetSettings(AsyncWebServerRequest *request);
     void handleUpdateSettings(AsyncWebServerRequest *request);

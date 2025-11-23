@@ -6,6 +6,10 @@
 #include "../hardware/Motors.h"
 #include "../hardware/CuttingMechanism.h"
 
+// External kalibrerings funktioner fra main.cpp
+extern void requestGyroCalibration();
+extern void requestMagCalibration();
+
 WebAPI::WebAPI() {
     webServerPtr = nullptr;
     stateManagerPtr = nullptr;
@@ -74,9 +78,14 @@ void WebAPI::setupRoutes() {
         handlePause(request);
     });
 
-    // POST /api/calibrate
+    // POST /api/calibrate (gyro kalibrering)
     server->on("/api/calibrate", HTTP_POST, [this](AsyncWebServerRequest *request) {
         handleCalibrate(request);
+    });
+
+    // POST /api/calibrate/mag (magnetometer kalibrering)
+    server->on("/api/calibrate/mag", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handleCalibrateMag(request);
     });
 
     // GET /api/logs
@@ -179,9 +188,27 @@ void WebAPI::handlePause(AsyncWebServerRequest *request) {
 }
 
 void WebAPI::handleCalibrate(AsyncWebServerRequest *request) {
-    request->send(200, "application/json", "{\"status\":\"calibrating\"}");
-    Logger::info("API: Calibration requested");
-    // Calibration vil blive håndteret i main loop
+    Logger::info("API: Gyro calibration requested");
+    requestGyroCalibration();
+    request->send(200, "application/json", "{\"status\":\"calibrating\",\"type\":\"gyro\"}");
+}
+
+void WebAPI::handleCalibrateMag(AsyncWebServerRequest *request) {
+    if (imuPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"IMU not available\"}");
+        return;
+    }
+
+    if (!imuPtr->hasMagnetometer()) {
+        Logger::error("API: Magnetometer calibration requested but no magnetometer available");
+        request->send(400, "application/json", "{\"error\":\"No magnetometer detected\"}");
+        return;
+    }
+
+    Logger::info("API: Magnetometer calibration requested");
+    requestMagCalibration();
+    request->send(200, "application/json",
+        "{\"status\":\"calibrating\",\"type\":\"magnetometer\",\"duration\":30,\"instructions\":\"Rotate robot slowly in all directions\"}");
 }
 
 void WebAPI::handleGetLogs(AsyncWebServerRequest *request) {
@@ -228,6 +255,15 @@ String WebAPI::createStatusJSON() {
 
     // IMU
     if (imuPtr != nullptr) {
+        JsonObject imu = doc.createNestedObject("imu");
+        imu["heading"] = imuPtr->getHeading();
+        imu["pitch"] = imuPtr->getPitch();
+        imu["roll"] = imuPtr->getRoll();
+        imu["hasMagnetometer"] = imuPtr->hasMagnetometer();
+        imu["magCalibrated"] = imuPtr->isMagCalibrated();
+        imu["gyroCalibrated"] = imuPtr->isCalibrated();
+
+        // Legacy felter for bagudkompatibilitet
         doc["heading"] = imuPtr->getHeading();
         doc["pitch"] = imuPtr->getPitch();
         doc["roll"] = imuPtr->getRoll();
