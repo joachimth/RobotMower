@@ -105,6 +105,7 @@ private:
     void handlePerimeterStart(AsyncWebServerRequest *request);
     void handlePerimeterStop(AsyncWebServerRequest *request);
     void handlePerimeterCalibrate(AsyncWebServerRequest *request);
+    void handleReturnToBase(AsyncWebServerRequest *request);
     #endif
 
     // Hardware pointers

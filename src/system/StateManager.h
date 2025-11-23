@@ -9,15 +9,16 @@
  * RobotState enum - Definerer alle robot tilstande
  */
 enum RobotState {
-    STATE_IDLE,         // Inaktiv, venter på kommando
-    STATE_MANUAL,       // Manuel kontrol
-    STATE_CALIBRATING,  // Kalibrerer sensorer
-    STATE_MOWING,       // Klipper aktivt
-    STATE_TURNING,      // Drejer
-    STATE_AVOIDING,     // Undgår forhindring
-    STATE_RETURNING,    // Vender tilbage til base
-    STATE_CHARGING,     // Lader batteri
-    STATE_ERROR         // Fejltilstand
+    STATE_IDLE,             // Inaktiv, venter på kommando
+    STATE_MANUAL,           // Manuel kontrol
+    STATE_CALIBRATING,      // Kalibrerer sensorer
+    STATE_MOWING,           // Klipper aktivt
+    STATE_TURNING,          // Drejer
+    STATE_AVOIDING,         // Undgår forhindring
+    STATE_RETURNING,        // Vender tilbage til base (følger perimeter)
+    STATE_SEARCHING_SIGNAL, // Søger efter perimeter signal
+    STATE_CHARGING,         // Lader batteri
+    STATE_ERROR             // Fejltilstand
 };
 
 /**
@@ -89,6 +90,16 @@ public:
      * Stopper klipning
      */
     void stopMowing();
+
+    /**
+     * Starter return til base (følger perimeter)
+     */
+    void returnToBase();
+
+    /**
+     * Starter signal søgning
+     */
+    void searchForSignal();
 
     /**
      * Håndterer fejl
