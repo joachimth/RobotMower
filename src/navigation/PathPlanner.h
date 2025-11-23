@@ -102,6 +102,23 @@ public:
      */
     bool isTurning();
 
+    /**
+     * Signalerer at perimeter grænse er nået
+     * Afslutter nuværende række og forbereder drejning
+     */
+    void perimeterReached();
+
+    /**
+     * Hent om perimeter afsluttede sidste række
+     * @return true hvis perimeter stoppede rækken
+     */
+    bool wasPerimeterTriggered();
+
+    /**
+     * Nulstil perimeter trigger flag
+     */
+    void clearPerimeterTrigger();
+
 private:
     /**
      * Beregner target heading for næste række
@@ -126,6 +143,9 @@ private:
     // State
     bool patternActive;
     bool initialized;
+
+    // Perimeter integration
+    bool perimeterTriggered;  // true hvis perimeter stoppede sidste række
 };
 
 #endif // PATH_PLANNER_H

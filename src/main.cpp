@@ -148,6 +148,10 @@ void checkSafetyConditions();
 #if ENABLE_PERIMETER
 void updatePerimeter();
 void handlePerimeterBoundary();
+void handleReturningState();
+void handleSearchingSignalState();
+void followPerimeterWire();
+void searchForPerimeterSignal();
 #endif
 
 // ============================================================================
@@ -457,6 +461,16 @@ void runStateMachine() {
         case STATE_AVOIDING:
             handleAvoidingState();
             break;
+
+        #if ENABLE_PERIMETER
+        case STATE_RETURNING:
+            handleReturningState();
+            break;
+
+        case STATE_SEARCHING_SIGNAL:
+            handleSearchingSignalState();
+            break;
+        #endif
 
         case STATE_ERROR:
             handleErrorState();
@@ -826,7 +840,25 @@ void handlePerimeterBoundary() {
     movement.backUp(PERIMETER_BACKUP_DISTANCE);
     delay(500);
 
-    // Drej væk fra kablet
+    // Tjek om vi er i et aktivt klipningsmønster
+    if (stateManager.getState() == STATE_MOWING && !pathPlanner.isPatternComplete()) {
+        // Mønster er aktivt - brug PathPlanner til intelligent drejning
+        pathPlanner.perimeterReached();
+
+        // Hent drejningsretning fra PathPlanner
+        Direction turnDir = pathPlanner.getTurnDirection();
+        Logger::info("Pattern-aware turn: " + String(turnDir == RIGHT ? "RIGHT" : "LEFT"));
+
+        // Start drejning via state machine
+        stateManager.setState(STATE_TURNING);
+        pathPlanner.startTurn();
+
+        // Clear perimeter trigger efter vi har håndteret det
+        pathPlanner.clearPerimeterTrigger();
+        return;
+    }
+
+    // Ikke i mønster - brug standard drejning baseret på kabel-retning
     PerimeterDirection dir = perimeterReceiver.getDirection();
     if (dir == PERIMETER_LEFT) {
         Logger::info("Perimeter on left - turning right");
@@ -856,6 +888,175 @@ void handlePerimeterBoundary() {
 
     // Fortsæt klipning
     stateManager.setState(STATE_MOWING);
+}
+
+// ============================================================================
+// RETURNING TO BASE - Følger perimeter wire hjem
+// ============================================================================
+
+void handleReturningState() {
+    static bool initialized = false;
+    static unsigned long lastUpdate = 0;
+
+    if (!initialized) {
+        Logger::info("Starting return to base sequence");
+        cuttingMech.stop();
+        initialized = true;
+    }
+
+    // Opdater perimeter ved hver iteration
+    perimeterReceiver.update();
+
+    // Tjek om vi har mistet signalet
+    if (!perimeterReceiver.hasSignal()) {
+        Logger::warning("Lost perimeter signal during return!");
+        initialized = false;
+        stateManager.searchForSignal();
+        return;
+    }
+
+    // Følg perimeter wire
+    followPerimeterWire();
+
+    // TODO: Tjek om vi er nået frem til ladestationen
+    // Dette kræver en sensor eller et stærkere signal ved stationen
+    // For nu kører vi bare indtil brugeren stopper
+
+    // Reset initialized når vi forlader staten
+    if (stateManager.getState() != STATE_RETURNING) {
+        initialized = false;
+    }
+}
+
+void followPerimeterWire() {
+    // Følg kablet ved at holde det på venstre side
+    // Kør fremad og juster retning baseret på signalstyrke
+
+    PerimeterState state = perimeterReceiver.getState();
+    PerimeterDirection dir = perimeterReceiver.getDirection();
+    int signalStrength = perimeterReceiver.getSignalStrength();
+
+    // Målsætning: Hold kablet til venstre, kør langs det
+    const int TARGET_STRENGTH = 30;  // Ca. 30cm fra kablet
+    const int TOLERANCE = 10;
+
+    if (state == PERIMETER_OUTSIDE) {
+        // Vi er udenfor - drej til venstre for at komme ind igen
+        movement.turnInPlace(LEFT, MOTOR_SLOW_SPEED);
+        delay(200);
+    } else if (state == PERIMETER_ON_WIRE) {
+        // Vi er på kablet - drej lidt til højre
+        movement.turnInPlace(RIGHT, MOTOR_SLOW_SPEED);
+        delay(100);
+    } else if (state == PERIMETER_INSIDE) {
+        // Vi er inden for - juster baseret på signalstyrke
+        if (signalStrength > TARGET_STRENGTH + TOLERANCE) {
+            // For tæt på kablet - drej lidt væk (højre)
+            motors.setSpeed(MOTOR_SLOW_SPEED, MOTOR_SLOW_SPEED - 30);
+        } else if (signalStrength < TARGET_STRENGTH - TOLERANCE) {
+            // For langt fra kablet - drej mod det (venstre)
+            motors.setSpeed(MOTOR_SLOW_SPEED - 30, MOTOR_SLOW_SPEED);
+        } else {
+            // God afstand - kør lige frem
+            motors.setSpeed(MOTOR_SLOW_SPEED, MOTOR_SLOW_SPEED);
+        }
+    } else {
+        // Intet signal - stop og søg
+        motors.stop();
+        Logger::warning("No signal in followPerimeterWire");
+    }
+}
+
+// ============================================================================
+// SIGNAL SEARCH - Søger efter mistet perimeter signal
+// ============================================================================
+
+void handleSearchingSignalState() {
+    static bool initialized = false;
+    static int searchPhase = 0;
+    static unsigned long phaseStartTime = 0;
+    static int spiralRadius = 0;
+
+    if (!initialized) {
+        Logger::info("Starting perimeter signal search");
+        cuttingMech.stop();
+        searchPhase = 0;
+        spiralRadius = 0;
+        phaseStartTime = millis();
+        initialized = true;
+    }
+
+    // Opdater perimeter
+    perimeterReceiver.update();
+
+    // Tjek om vi har fundet signalet
+    if (perimeterReceiver.hasSignal()) {
+        Logger::info("Perimeter signal found!");
+        initialized = false;
+
+        // Gå tilbage til forrige state eller idle
+        RobotState prevState = stateManager.getPreviousState();
+        if (prevState == STATE_RETURNING) {
+            stateManager.setState(STATE_RETURNING);
+        } else if (prevState == STATE_MOWING) {
+            stateManager.setState(STATE_MOWING);
+        } else {
+            stateManager.setState(STATE_IDLE);
+        }
+        return;
+    }
+
+    // Udfør søgemønster
+    searchForPerimeterSignal();
+
+    // Timeout efter 2 minutter
+    if (millis() - phaseStartTime > 120000) {
+        Logger::error("Signal search timeout - could not find perimeter!");
+        initialized = false;
+        stateManager.handleError("Perimeter signal lost");
+        return;
+    }
+
+    // Reset når vi forlader staten
+    if (stateManager.getState() != STATE_SEARCHING_SIGNAL) {
+        initialized = false;
+    }
+}
+
+void searchForPerimeterSignal() {
+    // Spiral søgemønster
+    // Kør i stadigt større cirkler indtil signal findes
+
+    static int searchStep = 0;
+    static unsigned long stepStartTime = 0;
+    static float currentHeading = 0;
+
+    unsigned long now = millis();
+
+    // Hver søge-iteration
+    if (now - stepStartTime > 500) {
+        stepStartTime = now;
+        searchStep++;
+
+        // Spiral ud: kør lidt fremad, drej lidt
+        int forwardTime = 200 + (searchStep * 10);  // Længere og længere strækninger
+        int turnTime = 300;
+
+        // Kør fremad
+        movement.driveStraight(MOTOR_SLOW_SPEED);
+        delay(min(forwardTime, 2000));
+
+        // Drej til højre (med uret spiral)
+        movement.turnInPlace(RIGHT, MOTOR_TURN_SPEED);
+        delay(turnTime);
+
+        movement.stop();
+
+        // Log progress
+        if (searchStep % 10 == 0) {
+            Serial.printf("[Search] Step %d - still searching...\n", searchStep);
+        }
+    }
 }
 #endif
 

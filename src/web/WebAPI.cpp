@@ -174,6 +174,10 @@ void WebAPI::setupRoutes() {
     server->on("/api/perimeter/calibrate", HTTP_POST, [this](AsyncWebServerRequest *request) {
         handlePerimeterCalibrate(request);
     });
+
+    server->on("/api/return-to-base", HTTP_POST, [this](AsyncWebServerRequest *request) {
+        handleReturnToBase(request);
+    });
     #endif
 
     Logger::info("API routes configured (including manual control)");
@@ -632,5 +636,23 @@ void WebAPI::handlePerimeterCalibrate(AsyncWebServerRequest *request) {
     perimeterReceiverPtr->calibrate();
     request->send(200, "application/json",
         "{\"status\":\"calibrated\",\"message\":\"Perimeter calibration complete\"}");
+}
+
+void WebAPI::handleReturnToBase(AsyncWebServerRequest *request) {
+    if (stateManagerPtr == nullptr) {
+        request->send(500, "application/json", "{\"error\":\"State manager not initialized\"}");
+        return;
+    }
+
+    if (perimeterReceiverPtr == nullptr || !perimeterReceiverPtr->hasSignal()) {
+        request->send(400, "application/json",
+            "{\"error\":\"No perimeter signal - cannot return to base\"}");
+        return;
+    }
+
+    stateManagerPtr->returnToBase();
+    request->send(200, "application/json",
+        "{\"status\":\"returning\",\"message\":\"Robot is returning to base following perimeter wire\"}");
+    Logger::info("API: Return to base requested");
 }
 #endif
