@@ -15,6 +15,10 @@ class Sensors;
 class IMU;
 class Motors;
 class CuttingMechanism;
+#if ENABLE_PERIMETER
+class PerimeterReceiver;
+class PerimeterClient;
+#endif
 
 /**
  * WebAPI klasse - Håndterer REST API endpoints
@@ -95,6 +99,14 @@ private:
     void handleCuttingStop(AsyncWebServerRequest *request);
     void handleGetCurrent(AsyncWebServerRequest *request);
 
+    #if ENABLE_PERIMETER
+    // Perimeter handlers
+    void handlePerimeterStatus(AsyncWebServerRequest *request);
+    void handlePerimeterStart(AsyncWebServerRequest *request);
+    void handlePerimeterStop(AsyncWebServerRequest *request);
+    void handlePerimeterCalibrate(AsyncWebServerRequest *request);
+    #endif
+
     // Hardware pointers
     MowerWebServer* webServerPtr;
     StateManager* stateManagerPtr;
@@ -103,9 +115,21 @@ private:
     IMU* imuPtr;
     Motors* motorsPtr;
     CuttingMechanism* cuttingMechPtr;
+    #if ENABLE_PERIMETER
+    PerimeterReceiver* perimeterReceiverPtr;
+    PerimeterClient* perimeterClientPtr;
+    #endif
 
     // State
     bool initialized;
+
+public:
+    #if ENABLE_PERIMETER
+    /**
+     * Sætter perimeter references (kaldes fra main)
+     */
+    void setPerimeterReferences(PerimeterReceiver* receiver, PerimeterClient* client);
+    #endif
 };
 
 #endif // WEBAPI_H
