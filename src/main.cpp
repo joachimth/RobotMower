@@ -434,7 +434,7 @@ void handleCalibratingState() {
         // display.showCalibration(0);
         // #endif
 
-        imu.calibrate();
+        imu.calibrateGyro();
         calibrationStarted = true;
 
         // Efter kalibrering, gå tilbage til IDLE

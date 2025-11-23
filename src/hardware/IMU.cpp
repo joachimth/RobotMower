@@ -1,21 +1,27 @@
 #include "IMU.h"
+#include <math.h>
 
-IMU::IMU() {
-    accelX = accelY = accelZ = 0;
-    gyroX = gyroY = gyroZ = 0;
-    heading = yaw = pitch = roll = 0.0;
-    gyroXOffset = gyroYOffset = gyroZOffset = 0.0;
-    gyroBiasZ = 0.0;
-    stationaryTime = 0;
-    lastUpdate = 0;
-    deltaTime = 0.0;
-    initialized = false;
-    calibrated = false;
-    headingOffset = 0.0;
-    gyroZBufferIndex = 0;
-    for (int i = 0; i < GYRO_BUFFER_SIZE; i++) {
-        gyroZBuffer[i] = 0.0;
-    }
+IMU::IMU()
+    : _ax(0), _ay(0), _az(0),
+      _gx(0), _gy(0), _gz(0),
+      _mx(0), _my(0), _mz(0),
+      _axLPF(0), _ayLPF(0), _azLPF(1.0f),
+      _accAlpha(0.1f),
+      _gyroBiasX(0), _gyroBiasY(0), _gyroBiasZ(0),
+      _magBiasX(0), _magBiasY(0), _magBiasZ(0),
+      _magScaleX(1.0f), _magScaleY(1.0f), _magScaleZ(1.0f),
+      _declination(0.0f),
+      _heading(0), _pitch(0), _roll(0),
+      _alpha(0.98f),
+      _lastMicros(0),
+      _initialized(false),
+      _gyroCalibrated(false),
+      _magnetometerAvailable(false),
+      _headingOffset(0),
+      _encoderFusionEnabled(false),
+      _encoderHeading(0),
+      _encoderConfidence(0)
+{
 }
 
 bool IMU::begin() {
@@ -25,334 +31,485 @@ bool IMU::begin() {
 
     delay(100); // Lad IMU stabilisere
 
-    // Wake up MPU6050/9250
-    Wire.beginTransmission(MPU_ADDR);
-    Wire.write(PWR_MGMT_1);
-    Wire.write(0); // Wake up
-    byte error = Wire.endTransmission();
-
-    if (error != 0) {
-        Serial.printf("[IMU] Failed to initialize - I2C error: %d\n", error);
+    // Initialiser MPU-9250/6050
+    if (!initMPU()) {
+        Serial.println("[IMU] Failed to initialize MPU");
         return false;
     }
 
-    delay(100);
+    // Forsøg at initialisere magnetometer (AK8963)
+    _magnetometerAvailable = initMagnetometer();
 
-    // Verificer kommunikation ved at læse WHO_AM_I register
-    Wire.beginTransmission(MPU_ADDR);
-    Wire.write(0x75); // WHO_AM_I register
-    Wire.endTransmission(false);
-    Wire.requestFrom(MPU_ADDR, (uint8_t)1);
-
-    if (Wire.available()) {
-        uint8_t whoami = Wire.read();
-        Serial.printf("[IMU] WHO_AM_I: 0x%02X\n", whoami);
-
-        // MPU6050 returnerer 0x68, MPU9250 returnerer 0x71
-        if (whoami != 0x68 && whoami != 0x71) {
-            Serial.println("[IMU] Warning: Unexpected WHO_AM_I value");
-        }
+    if (_magnetometerAvailable) {
+        Serial.println("[IMU] Magnetometer (AK8963) detected and initialized");
+        Serial.println("[IMU] Heading will use magnetometer + gyro fusion");
+    } else {
+        Serial.println("[IMU] WARNING: No magnetometer detected!");
+        Serial.println("[IMU] Heading will use gyro-only (will drift over time)");
+        Serial.println("[IMU] Consider using encoder fusion for better stability");
     }
 
-    // Konfigurer Digital Low Pass Filter (DLPF)
-    // DLPF_CFG = 3: Bandwidth 44Hz (gyro), 44Hz (accel), 1kHz sample rate
-    // Dette reducerer højfrekvent støj betydeligt
-    Wire.beginTransmission(MPU_ADDR);
-    Wire.write(CONFIG);
-    Wire.write(0x03); // DLPF_CFG = 3
-    if (Wire.endTransmission() != 0) {
-        Serial.println("[IMU] Warning: Failed to set DLPF");
-    }
-    delay(10);
-
-    // Konfigurer Gyroscope range: ±250°/s (mest følsom, mindst støj)
-    // FS_SEL = 0: ±250°/s, LSB Sensitivity = 131 LSB/(°/s)
-    Wire.beginTransmission(MPU_ADDR);
-    Wire.write(GYRO_CONFIG);
-    Wire.write(0x00); // FS_SEL = 0
-    if (Wire.endTransmission() != 0) {
-        Serial.println("[IMU] Warning: Failed to set gyro range");
-    }
-    delay(10);
-
-    // Konfigurer Accelerometer range: ±2g (mest følsom)
-    // AFS_SEL = 0: ±2g, LSB Sensitivity = 16384 LSB/g
-    Wire.beginTransmission(MPU_ADDR);
-    Wire.write(ACCEL_CONFIG);
-    Wire.write(0x00); // AFS_SEL = 0
-    if (Wire.endTransmission() != 0) {
-        Serial.println("[IMU] Warning: Failed to set accel range");
-    }
-    delay(10);
-
-    // Konfigurer Sample Rate Divider
-    // Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
-    // Med DLPF enabled: Gyro Output = 1kHz, så 1kHz/(1+9) = 100Hz
-    Wire.beginTransmission(MPU_ADDR);
-    Wire.write(SMPLRT_DIV);
-    Wire.write(0x09); // Divider = 9, giver 100Hz sample rate
-    if (Wire.endTransmission() != 0) {
-        Serial.println("[IMU] Warning: Failed to set sample rate");
-    }
-    delay(10);
-
-    Serial.println("[IMU] MPU6050 configured: DLPF=44Hz, Gyro=±250°/s, Accel=±2g, Rate=100Hz");
-
-    initialized = true;
-    lastUpdate = millis();
+    _lastMicros = micros();
+    _initialized = true;
 
     Serial.println("[IMU] Initialized successfully");
-    Serial.println("[IMU] !!! IMPORTANT: Run calibration before use !!!");
+    Serial.println("[IMU] !!! IMPORTANT: Run calibrateGyro() before use !!!");
+
+    // Sæt default magnetisk deklination for Danmark (~3 grader øst)
+    setDeclination(3.0f);
 
     return true;
 }
 
-void IMU::calibrate() {
-    if (!initialized) {
+bool IMU::initMPU() {
+    // Wake up device og vælg clock source (PLL med X gyro reference)
+    if (!writeRegister(MPU_ADDR, PWR_MGMT_1, 0x01)) {
+        Serial.println("[IMU] Failed to wake up MPU");
+        return false;
+    }
+    delay(100);
+
+    // Verificer kommunikation ved at læse WHO_AM_I register
+    uint8_t whoami;
+    if (!readRegisters(MPU_ADDR, 0x75, 1, &whoami)) {
+        Serial.println("[IMU] Failed to read WHO_AM_I");
+        return false;
+    }
+
+    Serial.printf("[IMU] WHO_AM_I: 0x%02X\n", whoami);
+
+    // MPU6050 returnerer 0x68, MPU9250 returnerer 0x71
+    if (whoami != 0x68 && whoami != 0x71) {
+        Serial.println("[IMU] Warning: Unexpected WHO_AM_I value");
+    }
+
+    // Sample rate divider: 1kHz / (1 + 9) = 100Hz
+    if (!writeRegister(MPU_ADDR, SMPLRT_DIV, 9)) {
+        Serial.println("[IMU] Warning: Failed to set sample rate");
+    }
+    delay(10);
+
+    // DLPF config: ~42Hz bandwidth (reducerer højfrekvent støj)
+    if (!writeRegister(MPU_ADDR, CONFIG_REG, 0x03)) {
+        Serial.println("[IMU] Warning: Failed to set DLPF");
+    }
+    delay(10);
+
+    // Gyroscope: ±250°/s (mest følsom, mindst støj)
+    if (!writeRegister(MPU_ADDR, GYRO_CONFIG, 0x00)) {
+        Serial.println("[IMU] Warning: Failed to set gyro range");
+    }
+    delay(10);
+
+    // Accelerometer: ±2g (mest følsom)
+    if (!writeRegister(MPU_ADDR, ACCEL_CONFIG, 0x00)) {
+        Serial.println("[IMU] Warning: Failed to set accel range");
+    }
+    delay(10);
+
+    // Accelerometer DLPF
+    if (!writeRegister(MPU_ADDR, ACCEL_CONFIG2, 0x03)) {
+        Serial.println("[IMU] Warning: Failed to set accel DLPF");
+    }
+    delay(10);
+
+    // Enable I2C bypass for at tilgå magnetometer direkte
+    if (!writeRegister(MPU_ADDR, INT_PIN_CFG, 0x02)) {
+        Serial.println("[IMU] Warning: Failed to enable I2C bypass");
+    }
+    delay(10);
+
+    Serial.println("[IMU] MPU configured: DLPF=42Hz, Gyro=±250°/s, Accel=±2g, Rate=100Hz");
+    return true;
+}
+
+bool IMU::initMagnetometer() {
+    // Tjek om magnetometer er tilgængelig
+    if (!detectMagnetometer()) {
+        return false;
+    }
+
+    // Power down magnetometer først
+    if (!writeRegister(MAG_ADDR, AK8963_CNTL1, 0x00)) {
+        return false;
+    }
+    delay(10);
+
+    // Soft reset
+    if (!writeRegister(MAG_ADDR, AK8963_CNTL2, 0x01)) {
+        Serial.println("[IMU] Warning: Mag soft reset failed");
+    }
+    delay(10);
+
+    // 16-bit output, continuous measurement mode 2 (100Hz)
+    // Mode 2: 0x16 = 0001 0110 = 16-bit (bit4=1), mode 2 (bits 3:0 = 0110)
+    if (!writeRegister(MAG_ADDR, AK8963_CNTL1, 0x16)) {
+        Serial.println("[IMU] Failed to configure magnetometer");
+        return false;
+    }
+    delay(10);
+
+    return true;
+}
+
+bool IMU::detectMagnetometer() {
+    // Forsøg at læse WIA (Who I Am) register fra AK8963
+    // AK8963 WIA register er 0x00 og skal returnere 0x48
+    uint8_t wia;
+
+    Wire.beginTransmission(MAG_ADDR);
+    Wire.write(0x00); // WIA register
+    if (Wire.endTransmission(false) != 0) {
+        return false;
+    }
+
+    Wire.requestFrom(MAG_ADDR, (uint8_t)1);
+    if (Wire.available()) {
+        wia = Wire.read();
+        if (wia == 0x48) {
+            Serial.printf("[IMU] AK8963 detected (WIA: 0x%02X)\n", wia);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void IMU::calibrateGyro(uint16_t samples) {
+    if (!_initialized) {
         Serial.println("[IMU] Error: Not initialized");
         return;
     }
 
-    Serial.println("[IMU] Starting calibration...");
-    Serial.println("[IMU] Keep robot STILL for 5 seconds!");
+    Serial.println("[IMU] Starting gyro calibration...");
+    Serial.println("[IMU] Keep robot STILL!");
 
-    delay(2000); // Giv bruger tid til at stoppe bevægelse
+    delay(1000); // Giv bruger tid til at stoppe bevægelse
 
-    // Nulstil offsets
-    gyroXOffset = 0.0;
-    gyroYOffset = 0.0;
-    gyroZOffset = 0.0;
+    float sumX = 0, sumY = 0, sumZ = 0;
+    uint16_t validSamples = 0;
 
-    // Tag flere målinger
-    long sumX = 0, sumY = 0, sumZ = 0;
-
-    for (int i = 0; i < IMU_CALIBRATION_SAMPLES; i++) {
-        readGyroscope();
-        sumX += gyroX;
-        sumY += gyroY;
-        sumZ += gyroZ;
-        delay(10);
+    for (uint16_t i = 0; i < samples; i++) {
+        if (readAccelGyro()) {
+            sumX += _gx;
+            sumY += _gy;
+            sumZ += _gz;
+            validSamples++;
+        }
+        delay(2);
 
         // Progress indicator
-        if (i % 20 == 0) {
+        if (i % 50 == 0) {
             Serial.print(".");
         }
     }
-
     Serial.println();
 
-    // Beregn gennemsnitlige offsets
-    gyroXOffset = (float)sumX / IMU_CALIBRATION_SAMPLES;
-    gyroYOffset = (float)sumY / IMU_CALIBRATION_SAMPLES;
-    gyroZOffset = (float)sumZ / IMU_CALIBRATION_SAMPLES;
+    if (validSamples > 0) {
+        _gyroBiasX = sumX / validSamples;
+        _gyroBiasY = sumY / validSamples;
+        _gyroBiasZ = sumZ / validSamples;
 
-    Serial.printf("[IMU] Calibration complete - Offsets: X=%.2f, Y=%.2f, Z=%.2f\n",
-                  gyroXOffset, gyroYOffset, gyroZOffset);
+        Serial.printf("[IMU] Gyro calibration complete - Bias: X=%.4f, Y=%.4f, Z=%.4f rad/s\n",
+                      _gyroBiasX, _gyroBiasY, _gyroBiasZ);
 
-    // Nulstil heading
-    heading = 0.0;
-    yaw = 0.0;
-    headingOffset = 0.0;
-
-    calibrated = true;
+        _gyroCalibrated = true;
+        _heading = 0;
+        _headingOffset = 0;
+    } else {
+        Serial.println("[IMU] Calibration failed - no valid samples");
+    }
 }
 
-void IMU::update() {
-    if (!initialized) {
-        return;
+void IMU::setMagCalibration(float biasX, float biasY, float biasZ,
+                            float scaleX, float scaleY, float scaleZ) {
+    _magBiasX = biasX;
+    _magBiasY = biasY;
+    _magBiasZ = biasZ;
+    _magScaleX = scaleX;
+    _magScaleY = scaleY;
+    _magScaleZ = scaleZ;
+
+    Serial.printf("[IMU] Mag calibration set - Bias: (%.1f, %.1f, %.1f), Scale: (%.2f, %.2f, %.2f)\n",
+                  biasX, biasY, biasZ, scaleX, scaleY, scaleZ);
+}
+
+void IMU::setDeclination(float declDeg) {
+    _declination = declDeg * PI / 180.0f;
+    Serial.printf("[IMU] Magnetic declination set: %.1f degrees\n", declDeg);
+}
+
+void IMU::setAlpha(float alpha) {
+    if (alpha < 0.0f) alpha = 0.0f;
+    if (alpha > 1.0f) alpha = 1.0f;
+    _alpha = alpha;
+    Serial.printf("[IMU] Complementary filter alpha set: %.2f\n", alpha);
+}
+
+bool IMU::update() {
+    if (!_initialized) {
+        return false;
     }
 
-    unsigned long currentTime = millis();
-    deltaTime = (currentTime - lastUpdate) / 1000.0; // Sekunder
-    lastUpdate = currentTime;
+    // Beregn delta time
+    unsigned long now = micros();
+    float dt = (now - _lastMicros) * 1e-6f;
+
+    // Validér deltaTime
+    if (dt <= 0.0f || dt > 1.0f) {
+        dt = 0.01f; // Fallback til 100Hz
+    }
+    _lastMicros = now;
 
     // Læs sensorer
-    readAccelerometer();
-    readGyroscope();
-
-    // Opdater drift kompensation
-    updateGyroBias();
-
-    // Beregn orientering
-    calculateOrientation();
-}
-
-float IMU::getHeading() {
-    return normalizeAngle(heading - headingOffset);
-}
-
-float IMU::getYaw() {
-    return yaw;
-}
-
-float IMU::getPitch() {
-    return pitch;
-}
-
-float IMU::getRoll() {
-    return roll;
-}
-
-void IMU::resetHeading() {
-    headingOffset = heading;
-    Serial.printf("[IMU] Heading reset - New offset: %.2f\n", headingOffset);
-}
-
-bool IMU::isCalibrated() {
-    return calibrated;
-}
-
-bool IMU::isTilted() {
-    // Tjek om robot er væltet baseret på pitch eller roll
-    return (abs(pitch) > TILT_ANGLE_THRESHOLD || abs(roll) > TILT_ANGLE_THRESHOLD);
-}
-
-void IMU::printValues() {
-    Serial.printf("[IMU] Heading: %.1f° | Pitch: %.1f° | Roll: %.1f° | Yaw: %.1f°\n",
-                  getHeading(), pitch, roll, yaw);
-}
-
-void IMU::readAccelerometer() {
-    Wire.beginTransmission(MPU_ADDR);
-    Wire.write(ACCEL_XOUT_H);
-    Wire.endTransmission(false);
-    Wire.requestFrom(MPU_ADDR, (uint8_t)6);
-
-    if (Wire.available() >= 6) {
-        accelX = (Wire.read() << 8) | Wire.read();
-        accelY = (Wire.read() << 8) | Wire.read();
-        accelZ = (Wire.read() << 8) | Wire.read();
-    }
-}
-
-void IMU::readGyroscope() {
-    Wire.beginTransmission(MPU_ADDR);
-    Wire.write(GYRO_XOUT_H);
-    Wire.endTransmission(false);
-    Wire.requestFrom(MPU_ADDR, (uint8_t)6);
-
-    if (Wire.available() >= 6) {
-        gyroX = (Wire.read() << 8) | Wire.read();
-        gyroY = (Wire.read() << 8) | Wire.read();
-        gyroZ = (Wire.read() << 8) | Wire.read();
-    }
-}
-
-void IMU::calculateOrientation() {
-    // Validér deltaTime - forhindrer spring i beregningerne
-    if (deltaTime <= 0.0 || deltaTime > 1.0) {
-        // Ugyldig deltaTime - skip denne opdatering
-        Serial.printf("[IMU] Warning: Invalid deltaTime: %.3f\n", deltaTime);
-        return;
+    if (!readAccelGyro()) {
+        return false;
     }
 
-    // Konverter accelerometer værdier til g (assuming ±2g range)
-    float accelXg = accelX / 16384.0;
-    float accelYg = accelY / 16384.0;
-    float accelZg = accelZ / 16384.0;
-
-    // Beregn pitch og roll fra accelerometer
-    float accelPitch = atan2(-accelXg, sqrt(accelYg * accelYg + accelZg * accelZg)) * 180.0 / PI;
-    float accelRoll = atan2(accelYg, accelZg) * 180.0 / PI;
-
-    // Konverter gyroscope værdier til grader/sekund (assuming ±250°/s range)
-    // og anvend kalibrerings offsets
-    float gyroXrate = ((gyroX - gyroXOffset) / 131.0) * deltaTime;
-    float gyroYrate = ((gyroY - gyroYOffset) / 131.0) * deltaTime;
-
-    // Anvend smoothing, offset OG bias kompensation for Z gyro
-    float gyroZrateRaw = getSmoothedGyroZ(); // Brug smoothed værdi i grader/sek
-
-    // Validér at gyro værdi er rimelig (ikke sensor fejl)
-    // ±250°/s range, så absolut værdi bør ikke overstige ~200°/s i normal brug
-    if (abs(gyroZrateRaw) > 200.0) {
-        Serial.printf("[IMU] Warning: Extreme gyro value: %.1f deg/s - ignoring\n", gyroZrateRaw);
-        return;
+    // Læs magnetometer hvis tilgængelig
+    if (_magnetometerAvailable) {
+        readMagnetometer(); // Fejl her er ikke kritisk
     }
 
-    float gyroZrate = (gyroZrateRaw - gyroBiasZ) * deltaTime; // Anvend bias korrektion
+    // Anvend gyro bias korrektion
+    float gx = _gx - _gyroBiasX;
+    float gy = _gy - _gyroBiasY;
+    float gz = _gz - _gyroBiasZ;
 
-    // Komplementær filter for pitch og roll (gyro + accel)
-    pitch = complementaryFilter(pitch + gyroYrate, accelPitch, 0.98);
-    roll = complementaryFilter(roll + gyroXrate, accelRoll, 0.98);
+    // Low-pass filter på accelerometer
+    _axLPF = _axLPF + _accAlpha * (_ax - _axLPF);
+    _ayLPF = _ayLPF + _accAlpha * (_ay - _ayLPF);
+    _azLPF = _azLPF + _accAlpha * (_az - _azLPF);
 
-    // Yaw/Heading fra gyroscope Z-akse (kun gyro, ingen magnetometer i brug)
-    // Nu med drift kompensation
-    yaw += gyroZrate;
-    yaw = normalizeAngle(yaw);
+    // Beregn roll og pitch fra accelerometer
+    _roll = atan2f(_ayLPF, _azLPF);
+    _pitch = atan2f(-_axLPF, sqrtf(_ayLPF * _ayLPF + _azLPF * _azLPF));
 
-    // Heading er samme som yaw for 2D navigation
-    heading = yaw;
+    // Beregn heading
+    float yawGyro = _heading + gz * dt;
+    yawGyro = wrapAngle(yawGyro);
+
+    if (_magnetometerAvailable) {
+        // Kalibreret magnetometer
+        float mx = (_mx - _magBiasX) * _magScaleX;
+        float my = (_my - _magBiasY) * _magScaleY;
+        float mz = (_mz - _magBiasZ) * _magScaleZ;
+
+        // Tilt-kompenseret magnetometer heading
+        float cosPitch = cosf(_pitch);
+        float sinPitch = sinf(_pitch);
+        float cosRoll = cosf(_roll);
+        float sinRoll = sinf(_roll);
+
+        float mx2 = mx * cosPitch + mz * sinPitch;
+        float my2 = mx * sinRoll * sinPitch + my * cosRoll - mz * sinRoll * cosPitch;
+
+        float yawMag = atan2f(-my2, mx2) + _declination;
+        yawMag = wrapAngle(yawMag);
+
+        // Complementary filter: fuser gyro og magnetometer
+        // Håndter wrap-around ved ±PI
+        float diff = yawMag - yawGyro;
+        if (diff > PI) diff -= 2.0f * PI;
+        if (diff < -PI) diff += 2.0f * PI;
+
+        _heading = wrapAngle(yawGyro + (1.0f - _alpha) * diff);
+    } else {
+        // Ingen magnetometer - brug kun gyro (vil drifte!)
+        _heading = yawGyro;
+    }
+
+    // Encoder fusion (hvis aktiveret)
+    if (_encoderFusionEnabled && _encoderConfidence > 0) {
+        float encoderRad = _encoderHeading * PI / 180.0f;
+        float diff = encoderRad - _heading;
+        if (diff > PI) diff -= 2.0f * PI;
+        if (diff < -PI) diff += 2.0f * PI;
+
+        // Fuser baseret på confidence (0-1)
+        // Lav confidence = lille korrektion
+        float encoderAlpha = 0.1f * _encoderConfidence;
+        _heading = wrapAngle(_heading + encoderAlpha * diff);
+    }
+
+    return true;
 }
 
-float IMU::normalizeAngle(float angle) {
-    while (angle < 0.0) {
-        angle += 360.0;
+bool IMU::readAccelGyro() {
+    uint8_t buf[14];
+    if (!readRegisters(MPU_ADDR, ACCEL_XOUT_H, 14, buf)) {
+        return false;
     }
-    while (angle >= 360.0) {
-        angle -= 360.0;
+
+    int16_t ax_raw = (int16_t)((buf[0] << 8) | buf[1]);
+    int16_t ay_raw = (int16_t)((buf[2] << 8) | buf[3]);
+    int16_t az_raw = (int16_t)((buf[4] << 8) | buf[5]);
+    // buf[6], buf[7] er temperatur - ikke brugt
+    int16_t gx_raw = (int16_t)((buf[8] << 8) | buf[9]);
+    int16_t gy_raw = (int16_t)((buf[10] << 8) | buf[11]);
+    int16_t gz_raw = (int16_t)((buf[12] << 8) | buf[13]);
+
+    // Konverter til fysiske enheder
+    // ±2g: 16384 LSB/g
+    _ax = (float)ax_raw / 16384.0f;
+    _ay = (float)ay_raw / 16384.0f;
+    _az = (float)az_raw / 16384.0f;
+
+    // ±250°/s: 131 LSB/(°/s) -> konverter til rad/s
+    const float deg2rad = PI / 180.0f;
+    _gx = ((float)gx_raw / 131.0f) * deg2rad;
+    _gy = ((float)gy_raw / 131.0f) * deg2rad;
+    _gz = ((float)gz_raw / 131.0f) * deg2rad;
+
+    return true;
+}
+
+bool IMU::readMagnetometer() {
+    // Tjek om data er klar (ST1 register bit 0)
+    uint8_t st1;
+    if (!readRegisters(MAG_ADDR, AK8963_ST1, 1, &st1)) {
+        return false;
     }
+
+    if (!(st1 & 0x01)) {
+        // Ingen ny data - behold gamle værdier
+        return true;
+    }
+
+    // Læs magnetometer data (6 bytes) + ST2 (1 byte for at rydde DRDY)
+    uint8_t buf[7];
+    if (!readRegisters(MAG_ADDR, AK8963_HXL, 7, buf)) {
+        return false;
+    }
+
+    // AK8963 er little-endian
+    int16_t mx_raw = (int16_t)((buf[1] << 8) | buf[0]);
+    int16_t my_raw = (int16_t)((buf[3] << 8) | buf[2]);
+    int16_t mz_raw = (int16_t)((buf[5] << 8) | buf[4]);
+    // buf[6] er ST2 - kan bruges til overflow check
+
+    // Tjek for overflow (ST2 bit 3)
+    if (buf[6] & 0x08) {
+        // Overflow - data er ikke valid
+        return false;
+    }
+
+    // Konverter til µT (16-bit mode: 0.15 µT/LSB)
+    const float scale = 0.15f;
+    _mx = (float)mx_raw * scale;
+    _my = (float)my_raw * scale;
+    _mz = (float)mz_raw * scale;
+
+    return true;
+}
+
+bool IMU::writeRegister(uint8_t addr, uint8_t reg, uint8_t value) {
+    Wire.beginTransmission(addr);
+    Wire.write(reg);
+    Wire.write(value);
+    return (Wire.endTransmission() == 0);
+}
+
+bool IMU::readRegisters(uint8_t addr, uint8_t reg, uint8_t count, uint8_t* dest) {
+    Wire.beginTransmission(addr);
+    Wire.write(reg);
+    if (Wire.endTransmission(false) != 0) {
+        return false;
+    }
+
+    uint8_t i = 0;
+    Wire.requestFrom(addr, count);
+    while (Wire.available() && i < count) {
+        dest[i++] = Wire.read();
+    }
+    return (i == count);
+}
+
+float IMU::wrapAngle(float angle) {
+    while (angle > PI) angle -= 2.0f * PI;
+    while (angle < -PI) angle += 2.0f * PI;
     return angle;
 }
 
-float IMU::complementaryFilter(float gyroValue, float accelValue, float alpha) {
-    // Komplementær filter: alpha * gyro + (1-alpha) * accel
-    // alpha tæt på 1 = stoler mere på gyro (mindre noise, men drifter)
-    // alpha tæt på 0 = stoler mere på accel (mere noise, men drifter ikke)
-    return alpha * gyroValue + (1.0 - alpha) * accelValue;
+float IMU::normalizeAngle(float angle) {
+    while (angle < 0.0f) angle += 360.0f;
+    while (angle >= 360.0f) angle -= 360.0f;
+    return angle;
 }
 
-bool IMU::isStationary() {
-    // Tjek om gyro værdier er små (næsten ingen rotation)
-    float gyroZrate = abs((gyroZ - gyroZOffset) / 131.0); // grader/sek
-
-    return (gyroZrate < GYRO_STATIONARY_THRESHOLD);
+float IMU::getHeading() {
+    float deg = (_heading - _headingOffset) * 180.0f / PI;
+    return normalizeAngle(deg);
 }
 
-float IMU::getSmoothedGyroZ() {
-    // Tilføj ny måling til ring buffer
-    gyroZBuffer[gyroZBufferIndex] = (gyroZ - gyroZOffset) / 131.0; // grader/sek
-    gyroZBufferIndex = (gyroZBufferIndex + 1) % GYRO_BUFFER_SIZE;
-
-    // Beregn gennemsnit
-    float sum = 0.0;
-    for (int i = 0; i < GYRO_BUFFER_SIZE; i++) {
-        sum += gyroZBuffer[i];
-    }
-    return sum / GYRO_BUFFER_SIZE;
+float IMU::getHeadingRad() {
+    return wrapAngle(_heading - _headingOffset);
 }
 
-void IMU::updateGyroBias() {
-    if (!calibrated) {
-        return;
-    }
+float IMU::getPitch() {
+    return _pitch * 180.0f / PI;
+}
 
-    unsigned long currentTime = millis();
+float IMU::getRoll() {
+    return _roll * 180.0f / PI;
+}
 
-    if (isStationary()) {
-        // Robot er stille - akkumuler tid
-        if (stationaryTime == 0) {
-            stationaryTime = currentTime;
-        }
+void IMU::resetHeading() {
+    _headingOffset = _heading;
+    Serial.printf("[IMU] Heading reset - offset: %.2f rad\n", _headingOffset);
+}
 
-        // Hvis robotten har været stille i tilstrækkelig lang tid
-        if ((currentTime - stationaryTime) > BIAS_UPDATE_TIME) {
-            // Opdater bias estimat med exponential moving average
-            // Dette antager at gennemsnitlig rotation over tid skal være 0
-            float rawGyroZ = getSmoothedGyroZ(); // Brug smoothed værdi
+bool IMU::isCalibrated() {
+    return _gyroCalibrated;
+}
 
-            // Hurtigere opdatering af bias (alpha = 0.05 betyder 5% ny, 95% gammel)
-            // Dette gør at bias opdateres hurtigere end før
-            gyroBiasZ = 0.95 * gyroBiasZ + 0.05 * rawGyroZ;
+bool IMU::hasMagnetometer() {
+    return _magnetometerAvailable;
+}
 
-            #if DEBUG_IMU
-            if (abs(gyroBiasZ) > 0.05) {
-                Serial.printf("[IMU] Gyro bias Z updated: %.3f deg/s\n", gyroBiasZ);
-            }
-            #endif
-        }
+bool IMU::isTilted() {
+    float pitchDeg = fabsf(_pitch * 180.0f / PI);
+    float rollDeg = fabsf(_roll * 180.0f / PI);
+    return (pitchDeg > TILT_THRESHOLD || rollDeg > TILT_THRESHOLD);
+}
+
+void IMU::printValues() {
+    Serial.printf("[IMU] Heading: %.1f° | Pitch: %.1f° | Roll: %.1f° | Mag: %s\n",
+                  getHeading(), getPitch(), getRoll(),
+                  _magnetometerAvailable ? "OK" : "N/A");
+}
+
+void IMU::getRawAccel(float &ax, float &ay, float &az) {
+    ax = _ax;
+    ay = _ay;
+    az = _az;
+}
+
+void IMU::getRawGyro(float &gx, float &gy, float &gz) {
+    gx = _gx;
+    gy = _gy;
+    gz = _gz;
+}
+
+void IMU::getRawMag(float &mx, float &my, float &mz) {
+    mx = _mx;
+    my = _my;
+    mz = _mz;
+}
+
+// ========== Encoder Fusion Interface ==========
+
+void IMU::fuseEncoderHeading(float encoderHeadingDeg, float confidence) {
+    _encoderHeading = encoderHeadingDeg;
+    _encoderConfidence = constrain(confidence, 0.0f, 1.0f);
+}
+
+void IMU::setEncoderFusionEnabled(bool enabled) {
+    _encoderFusionEnabled = enabled;
+    if (enabled) {
+        Serial.println("[IMU] Encoder fusion enabled");
     } else {
-        // Robot bevæger sig - nulstil stationary timer
-        stationaryTime = 0;
+        Serial.println("[IMU] Encoder fusion disabled");
+        _encoderConfidence = 0;
     }
 }
